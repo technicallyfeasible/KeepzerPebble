@@ -1,0 +1,37 @@
+{
+    "versionLabel": "1.0",
+    "uuid": "1670af4f-193f-4921-be48-11376e71adc2",
+    "appKeys": {
+        "setItems": 1
+    },
+    "longName": "Keepzer for Pebble",
+    "versionCode": 1,
+    "capabilities": [
+        "configurable"
+    ],
+    "shortName": "Keepzer",
+    "companyName": "Keepzer",
+    "watchapp": {
+        "watchface": false
+    },
+    "resources": {
+        "media": [
+            {
+                "type": "png",
+                "name": "IMAGE_ARROW_UP",
+                "file": "images/arrow_up.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_ARROW_DOWN",
+                "file": "images/arrow_down.png"
+            },
+            {
+                "menuIcon": true,
+                "type": "png",
+                "name": "IMAGE_LOGO",
+                "file": "images/keepzer_pebble.png"
+            }
+        ]
+    }
+}
