@@ -1,9 +1,7 @@
 {
     "versionLabel": "1.0",
     "uuid": "1670af4f-193f-4921-be48-11376e71adc2",
-    "appKeys": {
-        "setItems": 1
-    },
+    "appKeys": {},
     "longName": "Keepzer for Pebble",
     "versionCode": 1,
     "capabilities": [
