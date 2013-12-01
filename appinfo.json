@@ -21,9 +21,10 @@
     "resources": {
         "media": [
             {
+                "menuIcon": true,
                 "type": "png",
-                "name": "IMAGE_ARROW_UP",
-                "file": "images/arrow_up.png"
+                "name": "IMAGE_LOGO",
+                "file": "images/keepzer_pebble.png"
             },
             {
                 "type": "png",
@@ -31,10 +32,9 @@
                 "file": "images/arrow_down.png"
             },
             {
-                "menuIcon": true,
                 "type": "png",
-                "name": "IMAGE_LOGO",
-                "file": "images/keepzer_pebble.png"
+                "name": "IMAGE_ARROW_UP",
+                "file": "images/arrow_up.png"
             }
         ]
     }

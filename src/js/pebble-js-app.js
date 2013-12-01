@@ -1,11 +1,28 @@
 var initialised = false;
+var options = {
+	"items": []
+};
+var messages = [];
+var isSending = false;
 
 function appMessageAck(e) {
-    console.log("options sent to Pebble successfully");
+	isSending = false;
+	sendMessages();
 }
-
 function appMessageNack(e) {
-    console.log("options not sent to Pebble: " + e.error.message);
+	isSending = false;
+    console.log("Error sending message: " + e.error.message);
+}
+function sendMessages() {
+	if(isSending || messages.length == 0) return;
+	isSending = true;
+	var message = messages[0];
+	messages.splice(0, 1);
+	Pebble.sendAppMessage(message, appMessageAck, appMessageNack);
+}
+function addMessage(message) {
+	messages.push(message);
+	sendMessages();
 }
 
 function sendItem(index, name, length) {
@@ -15,31 +32,43 @@ function sendItem(index, name, length) {
 		"itemName": name,
 		"itemCount": length
 	}
-	Pebble.sendAppMessage(message, function() { console.log("Item sent"); }, function() { console.log("Item not sent: " + e.error.message); });
+	addMessage(message);
 }
+function sendItems() {
+	if(!options || !options.items)
+		return;
+	
+	for(var i = 0; i < options.items.length; i++)
+		sendItem(i, options.items[i].name, options.items.length);
+}
+
+function logItem(index) {
+}
+
 
 Pebble.addEventListener("ready", function() {
     initialised = true;
+    options = JSON.parse(window.localStorage.getItem('options'));
 });
 
 Pebble.addEventListener("showConfiguration", function() {
-    var options = JSON.parse(window.localStorage.getItem('options'));
-    console.log("read options: " + JSON.stringify(options));
-    console.log("showing configuration");
-    var uri = 'http://www.technicallyfeasible.com/pebble.html#' + encodeURIComponent(JSON.stringify(options));
+	var stringOptions = JSON.stringify(options);
+    console.log("Showing config with options: " + stringOptions);
+    var uri = 'http://www.technicallyfeasible.com/pebble.html#' + encodeURIComponent(stringOptions);
     Pebble.openURL(uri);
 });
 
 Pebble.addEventListener("webviewclosed", function(e) {
     console.log("configuration closed");
     if (e.response != '') {
-		var options = JSON.parse(decodeURIComponent(e.response));
-		console.log("storing options: " + JSON.stringify(options));
-		window.localStorage.setItem('options', JSON.stringify(options));
-		sendItem(0, options.text, 1);
-		//Pebble.sendAppMessage(options, appMessageAck, appMessageNack);
+		console.log("Options received: " + e.response);
+		var stringOptions = decodeURIComponent(e.response);
+		options = JSON.parse(stringOptions);
+		console.log("Storing options: " + stringOptions);
+		window.localStorage.setItem('options', stringOptions);
+		sendItems();
     } else {
-		console.log("no options received");
+		console.log("No options received");
     }
 });
 Pebble.addEventListener("appmessage", function(e) {

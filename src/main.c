@@ -1,5 +1,5 @@
 #include "pebble.h"
-#include "pebble_fonts.h"
+#include "mini-printf.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -42,15 +42,32 @@ static int current_item = 0;
 
 
 
-static void script_log(char *format, int arg) {
-  char text[128];
-  sprintf(text, format, arg);
-
+static void send_log(char *text) {
   DictionaryIterator *iter;
   app_message_outbox_begin(&iter);
   dict_write_cstring(iter, MESSAGE_TYPE, message_type_message);
   dict_write_cstring(iter, MESSAGE_MESSAGE, text);
   app_message_outbox_send();
+}
+static void script_log(char *format, int arg) {
+  char text[128];
+  mini_snprintf(text, 128, format, arg);
+  send_log(text);
+}
+static void script_log2(char *format, int arg1, int arg2) {
+  char text[160];
+  mini_snprintf(text, 160, format, arg1, arg2);
+  send_log(text);
+}
+static void script_log3(char *format, int arg1, int arg2, int arg3) {
+  char text[192];
+  mini_snprintf(text, 192, format, arg1, arg2, arg3);
+  send_log(text);
+}
+static void script_log4(char *format, int arg1, int arg2, int arg3, int arg4) {
+  char text[256];
+  mini_snprintf(text, 256, format, arg1, arg2, arg3, arg4);
+  send_log(text);
 }
 
 static void activity_append(char *data) {
@@ -115,25 +132,12 @@ static void show_event(int index) {
   if(index < 0) {
     index = s_active_item_count - 1;
     from_rect.origin.y = -(s_active_item_count + 1) * bounds.size.h;
-    layer_set_bounds(events_layer, from_rect);
-	layer_mark_dirty(events_layer);
-    /*GRect to_rect = GRect(0, -(index + 1) * bounds.size.h, bounds.size.w, height);
-    prop_animation = property_animation_create_layer_frame(events_layer, NULL, &to_rect);
-    animation_set_duration((Animation*) prop_animation, 400);
-    animation_schedule((Animation*) prop_animation);
-    current_item = index;
-    return;*/
   }
   else if(index >= s_active_item_count) {
     index = 0;
     from_rect.origin.y = 0;
-    layer_set_bounds(events_layer, from_rect);
-	layer_mark_dirty(events_layer);
   }
   GRect to_rect = GRect(0, -(index + 1) * bounds.size.h, bounds.size.w, height);
-  script_log("From: %d", from_rect.origin.y);
-  script_log("To: %d", to_rect.origin.y);
-
   prop_animation = property_animation_create_layer_frame(events_layer, &from_rect, &to_rect);
   animation_set_duration((Animation*) prop_animation, 400);
   animation_schedule((Animation*) prop_animation);
