@@ -26,7 +26,7 @@ Pebble.addEventListener("showConfiguration", function() {
     var options = JSON.parse(window.localStorage.getItem('options'));
     console.log("read options: " + JSON.stringify(options));
     console.log("showing configuration");
-    var uri = 'http://www.technicallyfeasible.com/pebble.html';
+    var uri = 'http://www.technicallyfeasible.com/pebble.html#' + encodeURIComponent(JSON.stringify(options));
     Pebble.openURL(uri);
 });
 
@@ -50,6 +50,10 @@ Pebble.addEventListener("appmessage", function(e) {
 			break;
 		case "log":
 			// log an item
+			break;
+		case "message":
+			// log an item
+			console.log("Message from Pebble: " + e.payload.message);
 			break;
 	}
   }

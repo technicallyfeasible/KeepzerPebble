@@ -11,12 +11,16 @@
 #define MESSAGE_ITEM 10
 #define MESSAGE_ITEM_NAME 11
 #define MESSAGE_ITEM_COUNT 12
+#define MESSAGE_MESSAGE 100
+#define STORAGE_ITEM_COUNT 0
+#define STORAGE_ITEMS 1
+
 static const char *message_type_log = "log";
 static const char *message_type_item = "item";
 static const char *message_type_state = "state";
+static const char *message_type_message = "message";
 
 static Window *window;
-static TextLayer *text_layer;
 static PropertyAnimation *prop_animation;
 
 static GRect bounds;
@@ -37,6 +41,18 @@ static int s_active_item_count = 0;
 static int current_item = 0;
 
 
+
+static void script_log(char *format, int arg) {
+  char text[128];
+  sprintf(text, format, arg);
+
+  DictionaryIterator *iter;
+  app_message_outbox_begin(&iter);
+  dict_write_cstring(iter, MESSAGE_TYPE, message_type_message);
+  dict_write_cstring(iter, MESSAGE_MESSAGE, text);
+  app_message_outbox_send();
+}
+
 static void activity_append(char *data) {
   if (s_active_item_count >= MAX_ACTIVITY_ITEMS) { 
     return;
@@ -49,6 +65,20 @@ static void activity_set(int index, char *data) {
     return;
   }
   strcpy(s_activity_items[index].name, data);
+}
+/* Store all activities in persistent storage */
+static void store_activities() {
+	persist_write_int(STORAGE_ITEM_COUNT, s_active_item_count);
+	persist_write_data(STORAGE_ITEMS, &s_activity_items, sizeof(ActivityItem)*s_active_item_count);
+}
+/* Load all activities in persistent storage */
+static void load_activities() {
+	s_active_item_count = persist_read_int(STORAGE_ITEM_COUNT);
+	if (s_active_item_count == 0)
+		return;
+    if (s_active_item_count > MAX_ACTIVITY_ITEMS)
+	  s_active_item_count = MAX_ACTIVITY_ITEMS;
+	persist_read_data(STORAGE_ITEMS, &s_activity_items, sizeof(ActivityItem)*s_active_item_count);
 }
 
 static void select_current_item() {
@@ -84,22 +114,26 @@ static void show_event(int index) {
   GRect from_rect = GRect(0, -(current_item + 1) * bounds.size.h, bounds.size.w, height);
   if(index < 0) {
     index = s_active_item_count - 1;
-    //from_rect.origin.y = -(s_active_item_count + 1) * bounds.size.h;
-    //layer_set_bounds(events_layer, from_rect);
-    GRect to_rect = GRect(0, -(index + 1) * bounds.size.h, bounds.size.w, height);
+    from_rect.origin.y = -(s_active_item_count + 1) * bounds.size.h;
+    layer_set_bounds(events_layer, from_rect);
+	layer_mark_dirty(events_layer);
+    /*GRect to_rect = GRect(0, -(index + 1) * bounds.size.h, bounds.size.w, height);
     prop_animation = property_animation_create_layer_frame(events_layer, NULL, &to_rect);
     animation_set_duration((Animation*) prop_animation, 400);
     animation_schedule((Animation*) prop_animation);
     current_item = index;
-    return;
+    return;*/
   }
   else if(index >= s_active_item_count) {
     index = 0;
     from_rect.origin.y = 0;
     layer_set_bounds(events_layer, from_rect);
+	layer_mark_dirty(events_layer);
   }
-
   GRect to_rect = GRect(0, -(index + 1) * bounds.size.h, bounds.size.w, height);
+  script_log("From: %d", from_rect.origin.y);
+  script_log("To: %d", to_rect.origin.y);
+
   prop_animation = property_animation_create_layer_frame(events_layer, &from_rect, &to_rect);
   animation_set_duration((Animation*) prop_animation, 400);
   animation_schedule((Animation*) prop_animation);
@@ -114,10 +148,12 @@ static void click_handler(ClickRecognizerRef recognizer, Window *window) {
   switch (click_recognizer_get_button_id(recognizer)) {
     case BUTTON_ID_UP:
 	  next_item = current_item - 1;
+      show_event(next_item);
       break;
 
     case BUTTON_ID_DOWN:
 	  next_item = current_item + 1;
+      show_event(next_item);
       break;
 
     default:
@@ -125,7 +161,6 @@ static void click_handler(ClickRecognizerRef recognizer, Window *window) {
 	  select_current_item();
       break;
   }
-  show_event(next_item);
 }
 
 static void load_resources() {
@@ -204,7 +239,6 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 
 	// Received items
     if (strcmp(type_tuple->value->cstring, message_type_item) == 0) {
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "Item received");
 		Tuple *item_tuple = dict_find(iter, MESSAGE_ITEM);
 		Tuple *name_tuple = dict_find(iter, MESSAGE_ITEM_NAME);
 		Tuple *count_tuple = dict_find(iter, MESSAGE_ITEM_COUNT);
@@ -212,6 +246,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 		activity_set(item_tuple->value->uint16, name_tuple->value->cstring);
 		layer_destroy(events_layer);
 		create_events(window);
+		store_activities();
     }
 }
 void in_dropped_handler(AppMessageResult reason, void *context) {
@@ -251,6 +286,7 @@ static void init(void) {
   init_messaging();
 
   load_resources();
+  //load_activities();
 
   create_logo_layer(window);
   create_events(window);

@@ -3,6 +3,7 @@
     "uuid": "1670af4f-193f-4921-be48-11376e71adc2",
     "appKeys": {
         "item": 10,
+        "message": 100,
         "itemCount": 12,
         "type": 0,
         "itemName": 11
