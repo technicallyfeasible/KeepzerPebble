@@ -62,7 +62,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
     console.log("configuration closed");
     if (e.response != '') {
 		console.log("Options received: " + e.response);
-		var stringOptions = decodeURIComponent(e.response);
+		var stringOptions = decodeURIComponent(e.response).replace(/[+]/g, ' ');
 		options = JSON.parse(stringOptions);
 		console.log("Storing options: " + stringOptions);
 		window.localStorage.setItem('options', stringOptions);
