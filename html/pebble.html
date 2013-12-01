@@ -5,24 +5,91 @@
 </head>
 <body>
 	<div>Keepzer for Pebble configuration</div>
-	<div><input type="text" id="testvalue" /></div>
+	<div><input type="text" id="value1" /></div>
+	<div><input type="text" id="value2" /></div>
+	<div><input type="text" id="value3" /></div>
 	<div><input type="button" value="Save" onclick="save();" /></div>
 
+	<div id="sensor_id"></div>
+	<div><input type="button" value="Connect" onclick="connect();" /></div>
+
 	<script type="text/javascript">
+		var idValue = "";
+		var keyValue = "";
+
+		function getCurrentHash() {
+			var r = window.location.href;
+			var i = r.indexOf("#");
+			return (i >= 0 ? r.substr(i+1) : "");
+    }
 		function load() {
-			var param = window.location.hash;
+			var param = getCurrentHash();
 			if(!param) return;
-			var config = JSON.parse(param.substring(1));
-			var valControl = document.getElementById('testvalue');
-			valControl.value = config.text;
+			var config = JSON.parse(decodeURIComponent(param));
+			if(config.items) {
+				for(var i = 0; i < config.items.length; i++) {
+					var valControl = document.getElementById('value' + (i+1));
+					valControl.value = config.items[i].name;
+				}
+			}
 		}
 		function save() {
-			var valControl = document.getElementById('testvalue');
+			var items = [];
+			for(var i = 1; i <= 3; i++) {
+				var valControl = document.getElementById('value' + i);
+				items.push({ "name": valControl.value });
+			}
 			var result = {
-				"text": valControl.value
+				"items": items,
+				"key": keyValue,
+				"id": idValue
 			};
 			window.location.href = "pebblejs://close#" + JSON.stringify(result);
 		}
+
+		function makeId()
+		{
+			var text = "";
+			var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+			for( var i=0; i < 10; i++ )
+				text += possible.charAt(Math.floor(Math.random() * possible.length));
+			return text;
+		}
+
+		function connect() {
+			if(!idValue)
+				idValue = encodeURIComponent("Pebble" + makeId());
+			var idElement = document.getElementById('sensor_id');
+			idElement.innerHTML = idValue;
+			connectKeepzer();
+		}
+
+		function connectKeepzer() {
+			if (!idValue)
+				return;
+
+		  var req = new XMLHttpRequest();
+		  req.open('GET', 'https://www.keepzer.com/sensors/v1/discover/connect?id=' + idValue, true);
+			req.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+		  req.onload = function(e) {
+		    if (req.readyState == 4 && req.status == 200) {
+		      if(req.status == 200) {
+		        var response = JSON.parse(req.responseText);
+						if(!response.isError && response.key) {
+							keyValue = response.key;
+							document.getElementById('sensor_id').innerHTML = keyValue;
+						} else {
+							// still waiting
+							connectKeepzer();
+						}
+		      } else { 
+						console.log("Error"); 
+					}
+		    }
+		  }
+		  req.send(null);
+		}
+
 		load();
 	</script>
 </body>
