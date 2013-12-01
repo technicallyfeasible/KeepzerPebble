@@ -14,6 +14,7 @@
 #define MESSAGE_MESSAGE 100
 #define STORAGE_ITEM_COUNT 0
 #define STORAGE_ITEMS 1
+#define STORAGE_ITEM_CURRENT 2
 
 static const char *message_type_log = "log";
 static const char *message_type_item = "item";
@@ -84,18 +85,22 @@ static void activity_set(int index, char *data) {
   strcpy(s_activity_items[index].name, data);
 }
 /* Store all activities in persistent storage */
-static void store_activities() {
+static void store_config() {
+	persist_write_int(STORAGE_ITEM_CURRENT, current_item);
 	persist_write_int(STORAGE_ITEM_COUNT, s_active_item_count);
-	persist_write_data(STORAGE_ITEMS, &s_activity_items, sizeof(ActivityItem)*s_active_item_count);
+	persist_write_data(STORAGE_ITEMS, s_activity_items, sizeof(ActivityItem)*s_active_item_count);
 }
 /* Load all activities in persistent storage */
-static void load_activities() {
+static void load_config() {
 	s_active_item_count = persist_read_int(STORAGE_ITEM_COUNT);
+	current_item = persist_read_int(STORAGE_ITEM_CURRENT);
+	if (current_item >= s_active_item_count)
+		current_item = s_active_item_count;
 	if (s_active_item_count == 0)
 		return;
     if (s_active_item_count > MAX_ACTIVITY_ITEMS)
 	  s_active_item_count = MAX_ACTIVITY_ITEMS;
-	persist_read_data(STORAGE_ITEMS, &s_activity_items, sizeof(ActivityItem)*s_active_item_count);
+	persist_read_data(STORAGE_ITEMS, s_activity_items, sizeof(ActivityItem)*s_active_item_count);
 }
 
 static void select_current_item() {
@@ -143,6 +148,7 @@ static void show_event(int index) {
   animation_schedule((Animation*) prop_animation);
 
   current_item = index;
+  layer_mark_dirty(navi_layer);
 }
 
 static void click_handler(ClickRecognizerRef recognizer, Window *window) {
@@ -185,6 +191,11 @@ static void navi_layer_update_callback(Layer *me, GContext* ctx) {
   graphics_draw_bitmap_in_rect(ctx, arrow_up_image, (GRect) { .origin = { bounds.size.w - arrowBounds.size.w, 0 }, .size = arrowBounds.size });
   arrowBounds = arrow_down_image->bounds;
   graphics_draw_bitmap_in_rect(ctx, arrow_down_image, (GRect) { .origin = { bounds.size.w - arrowBounds.size.w, bounds.size.h - arrowBounds.size.h }, .size = arrowBounds.size });
+  if(s_active_item_count > 1) {
+    int length = bounds.size.h / s_active_item_count;
+    int y = bounds.size.h * current_item / s_active_item_count;
+    graphics_draw_rect(ctx, GRect(bounds.size.w - 2, y, 2, length));
+  }
 }
 static void create_navi(Window *window) {
   navi_layer = layer_create(bounds);
@@ -213,12 +224,14 @@ static void create_events(Window *window) {
 
   GFont font = fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
 
-  int i;
-  add_event_layer(font, s_active_item_count - 1, 0);
-  for (i = 0; i < s_active_item_count; i++) {
-    add_event_layer(font, i, i + 1);
+  if(s_active_item_count > 0) {
+    int i;
+    add_event_layer(font, s_active_item_count - 1, 0);
+    for (i = 0; i < s_active_item_count; i++) {
+      add_event_layer(font, i, i + 1);
+    }
+    add_event_layer(font, 0, s_active_item_count + 1);
   }
-  add_event_layer(font, 0, s_active_item_count + 1);
 }
 
 static void config_provider(Window *window) {
@@ -250,7 +263,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 		activity_set(item_tuple->value->uint16, name_tuple->value->cstring);
 		layer_destroy(events_layer);
 		create_events(window);
-		store_activities();
+		store_config();
     }
 }
 void in_dropped_handler(AppMessageResult reason, void *context) {
@@ -283,14 +296,10 @@ static void init(void) {
   // Get the bounds of the window for sizing the text layer
   bounds = layer_get_bounds(window_layer);
 
-  activity_append("Drank 1 glass of water");
-  activity_append("Brushed teeth");
-  activity_append("Ate a muffin");
-
   init_messaging();
+  load_config();
 
   load_resources();
-  //load_activities();
 
   create_logo_layer(window);
   create_events(window);
@@ -298,6 +307,7 @@ static void init(void) {
 }
 
 static void deinit(void) {
+  store_config();
   destroy_property_animation(&prop_animation);
 
   window_stack_remove(window, false);
