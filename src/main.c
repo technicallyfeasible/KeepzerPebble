@@ -26,24 +26,25 @@ static Window *window;
 static PropertyAnimation *prop_animation;
 
 static GRect bounds;
-static BitmapLayer *logo_layer;
-static Layer *navi_layer;
-static TextLayer *confirm_text_layer;
-static Layer *events_layer;
+static BitmapLayer *logo_layer = NULL;
+static Layer *navi_layer = NULL;
+static TextLayer *confirm_text_layer = NULL;
+static TextLayer *status_text_layer = NULL;
+static Layer *events_layer = NULL;
 
 static GBitmap *arrow_up_image;
 static GBitmap *arrow_down_image;
 static GBitmap *logo_image;
 
+static char s_key_token[128] = "\0";
 typedef struct {
   char name[MAX_ITEM_TEXT_LENGTH];
 } ActivityItem;
 static ActivityItem s_activity_items[MAX_ACTIVITY_ITEMS];
 static int s_active_item_count = 0;
 static int current_item = 0;
-static char keyToken[128] = "\0";
 
-static int s_screen_count = 1;
+static int screen_count = 1;
 
 
 static void send_log(char *text) {
@@ -99,12 +100,12 @@ static void load_config() {
 	current_item = persist_read_int(STORAGE_ITEM_CURRENT);
 	if (current_item >= s_active_item_count)
 		current_item = s_active_item_count;
-	s_screen_count = s_active_item_count + 1;
+	screen_count = s_active_item_count + 1;
 	if (s_active_item_count == 0)
 		return;
     if (s_active_item_count > MAX_ACTIVITY_ITEMS)
 	  s_active_item_count = MAX_ACTIVITY_ITEMS;
-	s_screen_count = s_active_item_count + 1;
+	screen_count = s_active_item_count + 1;
 	persist_read_data(STORAGE_ITEMS, s_activity_items, sizeof(ActivityItem)*s_active_item_count);
 	
 	// get items from the configuration
@@ -115,11 +116,11 @@ static void load_config() {
 }
 /* Store the keytoken */
 static void store_keytoken() {
-	persist_write_string(STORAGE_KEYTOKEN, keyToken);
+	persist_write_string(STORAGE_KEYTOKEN, s_key_token);
 }
 /* Load the keytoken */
 static void load_keytoken() {
-	persist_read_string(STORAGE_KEYTOKEN, keyToken, sizeof(keyToken));
+	persist_read_string(STORAGE_KEYTOKEN, s_key_token, sizeof(s_key_token));
 }
 
 static void select_current_item() {
@@ -149,15 +150,15 @@ static void destroy_property_animation(PropertyAnimation **prop_animation) {
 }
 
 static void show_event(int index) {
-	int height = bounds.size.h * (s_screen_count + 2);
+	int height = bounds.size.h * (screen_count + 2);
 	destroy_property_animation(&prop_animation);
 
 	GRect from_rect = GRect(0, -(current_item + 1) * bounds.size.h, bounds.size.w, height);
 	if(index < 0) {
-		index = s_screen_count - 1;
-		from_rect.origin.y = -(s_screen_count + 1) * bounds.size.h;
+		index = screen_count - 1;
+		from_rect.origin.y = -(screen_count + 1) * bounds.size.h;
 	}
-	else if(index >= s_screen_count) {
+	else if(index >= screen_count) {
 		index = 0;
 		from_rect.origin.y = 0;
 	}
@@ -176,11 +177,15 @@ static void click_handler(ClickRecognizerRef recognizer, Window *window) {
 	int next_item = current_item;
 	switch (click_recognizer_get_button_id(recognizer)) {
 		case BUTTON_ID_UP:
+			if (screen_count <= 1)
+				break;
 			next_item = current_item - 1;
 			show_event(next_item);
 		break;
 
 		case BUTTON_ID_DOWN:
+			if (screen_count <= 1)
+				break;
 			next_item = current_item + 1;
 			show_event(next_item);
 		break;
@@ -203,6 +208,17 @@ static void create_logo_layer(Window *window) {
 	logo_layer = bitmap_layer_create((GRect) { .origin = { 3, bounds.size.h - logoBounds.size.h }, .size = logoBounds.size });
 	bitmap_layer_set_bitmap(logo_layer, logo_image);
 	layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(logo_layer));
+
+	GFont statusFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+
+	int offset = 4;
+	TextLayer *status_text_layer = text_layer_create(GRect(logoBounds.size.w + 7, bounds.size.h - logoBounds.size.h + offset, bounds.size.w - logoBounds.size.w - 7, logoBounds.size.h - offset));
+	text_layer_set_background_color(status_text_layer, GColorClear);
+	text_layer_set_font(status_text_layer, statusFont);
+	text_layer_set_text_alignment(status_text_layer, GTextAlignmentLeft);
+	text_layer_set_overflow_mode(status_text_layer, GTextOverflowModeTrailingEllipsis);
+	text_layer_set_text(status_text_layer, "Not connected");
+	layer_add_child(window_get_root_layer(window), text_layer_get_layer(status_text_layer));
 }
 
 static void navi_layer_update_callback(Layer *me, GContext* ctx) {
@@ -210,11 +226,19 @@ static void navi_layer_update_callback(Layer *me, GContext* ctx) {
 	graphics_draw_bitmap_in_rect(ctx, arrow_up_image, (GRect) { .origin = { bounds.size.w - arrowBounds.size.w, 0 }, .size = arrowBounds.size });
 	arrowBounds = arrow_down_image->bounds;
 	graphics_draw_bitmap_in_rect(ctx, arrow_down_image, (GRect) { .origin = { bounds.size.w - arrowBounds.size.w, bounds.size.h - arrowBounds.size.h }, .size = arrowBounds.size });
-	if(s_screen_count > 1) {
-		int length = bounds.size.h / s_screen_count;
-		int y = bounds.size.h * current_item / s_screen_count;
+	if(screen_count > 1) {
+		int length = bounds.size.h / screen_count;
+		int y = bounds.size.h * current_item / screen_count;
 		graphics_draw_rect(ctx, GRect(bounds.size.w - 2, y, 2, length));
 	}
+	if(current_item == 0) {
+		if (strlen(s_key_token) == 0)
+			text_layer_set_text(confirm_text_layer, "CONNECT");
+		else
+			text_layer_set_text(confirm_text_layer, "DISCONNECT");
+	}
+	else
+		text_layer_set_text(confirm_text_layer, "LOG");
 }
 static void create_navi(Window *window) {
 	navi_layer = layer_create(bounds);
@@ -229,12 +253,22 @@ static void create_navi(Window *window) {
 	text_layer_set_text(confirm_text_layer, "LOG");
 }
 
-static void add_state_layer(GFont font, int posIndex) {
-	TextLayer *text_layer = text_layer_create(GRect(2, posIndex * bounds.size.h, bounds.size.w - 26, bounds.size.h));
+static void add_state_layer(int posIndex) {
+	GFont bigFont = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+	GFont smallFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+
+	TextLayer *text_layer = text_layer_create(GRect(2, posIndex * bounds.size.h, bounds.size.w, bounds.size.h));
 	text_layer_set_background_color(text_layer, GColorClear);
-	text_layer_set_font(text_layer, font);
+	text_layer_set_font(text_layer, bigFont);
 	text_layer_set_text_alignment(text_layer, GTextAlignmentLeft);
-	text_layer_set_text(text_layer, "Config");
+	text_layer_set_text(text_layer, "Keepzer for Pebble");
+	layer_add_child(events_layer, text_layer_get_layer(text_layer));
+
+	text_layer = text_layer_create(GRect(2, posIndex * bounds.size.h + 24, bounds.size.w, (bounds.size.h / 2) - 24));
+	text_layer_set_background_color(text_layer, GColorClear);
+	text_layer_set_font(text_layer, smallFont);
+	text_layer_set_text_alignment(text_layer, GTextAlignmentLeft);
+	text_layer_set_text(text_layer, "Press CONNECT to connect to your Keepzer account");
 	layer_add_child(events_layer, text_layer_get_layer(text_layer));
 }
 static void add_event_layer(GFont font, int itemIndex, int posIndex) {
@@ -246,24 +280,24 @@ static void add_event_layer(GFont font, int itemIndex, int posIndex) {
 	layer_add_child(events_layer, text_layer_get_layer(text_layer));
 }
 static void create_events(Window *window) {
-	events_layer = layer_create(GRect(0, -(current_item + 1) * bounds.size.h, bounds.size.w, bounds.size.h * (s_screen_count + 2)));
+	events_layer = layer_create(GRect(0, -(current_item + 1) * bounds.size.h, bounds.size.w, bounds.size.h * (screen_count + 2)));
 	layer_add_child(window_get_root_layer(window), events_layer);
 
 	GFont font = fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
 	
 	if(s_active_item_count > 0) {
-		int offset = s_screen_count - s_active_item_count;
+		int offset = screen_count - s_active_item_count;
 		int i;
 		add_event_layer(font, s_active_item_count - 1, 0);
-		add_state_layer(font, 1);
+		add_state_layer(1);
 		for (i = 0; i < s_active_item_count; i++) {
 			add_event_layer(font, i, i + 1 + offset);
 		}
-		add_state_layer(font, s_screen_count + 1);
+		add_state_layer(screen_count + 1);
 		//add_event_layer(font, 0, s_active_item_count + 1 + offset);
 	}
 	else
-		add_state_layer(font, 1);
+		add_state_layer(1);
 }
 
 static void config_provider(Window *window) {
@@ -292,7 +326,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 		Tuple *name_tuple = dict_find(iter, MESSAGE_ITEM_NAME);
 		Tuple *count_tuple = dict_find(iter, MESSAGE_ITEM_COUNT);
 		s_active_item_count = count_tuple->value->uint16;
-		s_screen_count = s_active_item_count + 1;
+		screen_count = s_active_item_count + 1;
 		activity_set(item_tuple->value->uint16, name_tuple->value->cstring);
 		layer_destroy(events_layer);
 		create_events(window);
