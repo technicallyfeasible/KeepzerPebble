@@ -1,6 +1,7 @@
 var initialised = false;
 var options = {
-	"items": []
+	"items": [],		// items available for the user
+	"keytoken": ""		// token to use for pushing items into the store
 };
 var messages = [];
 var isSending = false;
@@ -54,7 +55,7 @@ Pebble.addEventListener("ready", function() {
 Pebble.addEventListener("showConfiguration", function() {
 	var stringOptions = JSON.stringify(options);
     console.log("Showing config with options: " + stringOptions);
-    var uri = 'http://www.technicallyfeasible.com/pebble.html#' + encodeURIComponent(stringOptions);
+	var uri = 'http://192.168.1.164:61722/other/pebble#' + encodeURIComponent(stringOptions);
     Pebble.openURL(uri);
 });
 
