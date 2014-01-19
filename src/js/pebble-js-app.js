@@ -32,7 +32,7 @@ function sendItem(index, name, length) {
 		"item": index,
 		"itemName": name,
 		"itemCount": length
-	}
+	};
 	addMessage(message);
 }
 function sendItems() {
@@ -41,6 +41,14 @@ function sendItems() {
 	
 	for(var i = 0; i < options.items.length; i++)
 		sendItem(i, options.items[i].name, options.items.length);
+}
+
+function sendAccountToken(token) {
+	var message = {
+		"type": "account_token",
+		"accountToken": token
+	};
+	addMessage(message);
 }
 
 function logItem(index) {
@@ -72,6 +80,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
 		console.log("No options received");
     }
 });
+
 Pebble.addEventListener("appmessage", function(e) {
 	console.log("Received message (type: " + e.payload.type + ", Item: " + e.payload.item + ")");
 	switch(e.payload.type) {
@@ -84,6 +93,9 @@ Pebble.addEventListener("appmessage", function(e) {
 		case "message":
 			// log an item
 			console.log("Message from Pebble: " + e.payload.message);
+			break;
+		case "account_token":
+			sendAccountToken(Pebble.getAccountToken());
 			break;
 	}
   }

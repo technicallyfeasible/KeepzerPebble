@@ -2,11 +2,12 @@
     "versionLabel": "1.0",
     "uuid": "1670af4f-193f-4921-be48-11376e71adc2",
     "appKeys": {
+        "accountToken": 20,
+        "itemName": 11,
         "item": 10,
         "message": 100,
         "itemCount": 12,
-        "type": 0,
-        "itemName": 11
+        "type": 0
     },
     "longName": "Keepzer for Pebble",
     "versionCode": 1,
@@ -14,7 +15,7 @@
         "configurable"
     ],
     "shortName": "Keepzer",
-    "companyName": "Keepzer",
+    "companyName": "Keepzer Ltd.",
     "watchapp": {
         "watchface": false
     },
