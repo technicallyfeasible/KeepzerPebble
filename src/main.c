@@ -271,30 +271,32 @@ static void state_layer_update_callback(Layer *me, GContext* ctx) {
 	text_layer_set_text(state_text_layer_bottom, bottomText);
 }
 static void create_state_layer(Window *window) {
-	state_layer = layer_create(bounds);
+	int posIndex = 0;
+	if (current_item != 0)
+		posIndex = 1;
+	state_layer = layer_create(GRect(0, posIndex * bounds.size.h, bounds.size.w, bounds.size.h));
 	layer_set_update_proc(state_layer, state_layer_update_callback);
 	layer_add_child(window_get_root_layer(window), state_layer);
 
-	int posIndex = 0;
 	
 	GFont bigFont = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
 	GFont smallFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 
-	TextLayer *text_layer = text_layer_create(GRect(2, posIndex * bounds.size.h, bounds.size.w, bounds.size.h));
+	TextLayer *text_layer = text_layer_create(GRect(2,0, bounds.size.w, bounds.size.h));
 	text_layer_set_background_color(text_layer, GColorClear);
 	text_layer_set_font(text_layer, bigFont);
 	text_layer_set_text_alignment(text_layer, GTextAlignmentLeft);
 	text_layer_set_text(text_layer, "Keepzer for Pebble");
 	layer_add_child(state_layer, text_layer_get_layer(text_layer));
 
-	state_text_layer_top = text_layer_create(GRect(2, posIndex * bounds.size.h + 24, bounds.size.w, (bounds.size.h / 2) - 24));
+	state_text_layer_top = text_layer_create(GRect(2, 24, bounds.size.w, (bounds.size.h / 2) - 24));
 	text_layer_set_background_color(state_text_layer_top, GColorClear);
 	text_layer_set_font(state_text_layer_top, smallFont);
 	text_layer_set_text_alignment(state_text_layer_top, GTextAlignmentLeft);
 	//text_layer_set_text(state_text_layer_top, "Press CONNECT to connect to your Keepzer account");
 	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_top));
 
-	state_text_layer_bottom = text_layer_create(GRect(0, posIndex * bounds.size.h + bounds.size.h / 2 + 12, bounds.size.w, (bounds.size.h / 2) - 40));
+	state_text_layer_bottom = text_layer_create(GRect(0, bounds.size.h / 2 + 12, bounds.size.w, (bounds.size.h / 2) - 40));
 	text_layer_set_background_color(state_text_layer_bottom, GColorClear);
 	text_layer_set_font(state_text_layer_bottom, bigFont);
 	text_layer_set_text_alignment(state_text_layer_bottom, GTextAlignmentLeft);
