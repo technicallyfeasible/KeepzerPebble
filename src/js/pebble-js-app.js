@@ -1,11 +1,13 @@
-var configUri = "http://192.168.1.164:61722/other/pebble";
-var sensorUri = "http://192.168.1.164:61722/sensors/v1";
+var configUri = "http://10.100.81.4:61722/other/pebble";
+var sensorUri = "http://10.100.81.4:61722/sensors/v1";
 
 var initialised = false;
+var connecting = false;
 var options = {
-	"items": [],		// items available for the user
-	"keytoken": ""		// token to use for pushing items into the store
+	"items": []			// items available for the user
 };
+var keytoken = "";		// token to use for pushing items into the store
+
 var messages = [];
 var isSending = false;
 
@@ -54,30 +56,72 @@ function sendAccountToken(token) {
 	addMessage(message);
 }
 
+function sendSensorId(sensorId) {
+	var message = {
+		"type": "sensorid",
+		"sensorId": sensorId
+	};
+	addMessage(message);
+}
+function sendKeyToken(token) {
+	var message = {
+		"type": "keytoken",
+		"keyToken": token
+	};
+	addMessage(message);
+}
+
 function logItem(index) {
 }
 
-function hex2base64(data)
+function hex2byte(c)
 {
-	var binData = "";
-	for (var i = 0; i < data.length; i++) {
-		var charCode = data[i] - 48;
-		if (charCode > 15)
-			charCode -= 7;
-		if (charCode > 15)
-			charCode -= 26;
-		if (charCode > 15) continue;
-		binData += String.fromCharCode(charCode);
-	}
-	return window.btoa(binData);
+	var charCode = c - 48;
+	if (charCode > 15)
+		charCode -= 7;
+	if (charCode > 15)
+		charCode -= 32;
+	if (charCode < 0 || charCode > 15)
+		return 0;
+	return charCode;
+}
+
+function hex2base64 (data) {
+  var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+  var o1, o2, o3, h1, h2, i = 0, ac = 0, enc = "", tmp_arr = [];
+
+  if (!data) {
+    return data;
+  }
+
+  do { // pack three quartets into two hexets
+    o1 = hex2byte(i < data.length ? data.charCodeAt(i++) : 48);
+    o2 = hex2byte(i < data.length ? data.charCodeAt(i++) : 48);
+    o3 = hex2byte(i < data.length ? data.charCodeAt(i++) : 48);
+
+    h1 = (o1 << 2) | (o2 >> 2);
+    h2 = ((o2 & 0x03) << 4) | o3;
+
+    // use hexets to index into b64, and append result to encoded string
+    tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2);
+  } while (i < data.length);
+
+  enc = tmp_arr.join('');
+
+  var r = (data.length % 3);
+
+  return (r == 1 ? enc.slice(0, -1) : enc) + '==='.slice(0, r);
 }
 
 function connectKeepzer(sensorId) {
-	if (!sensorId)
+	if (connecting || !sensorId)
 		return;
+	connecting = true;
+
+	console.log("Connecting sensor " + sensorId);
 
 	var req = new XMLHttpRequest();
-	req.open('GET', sensorUri + '/discover/connect?maker=a1b962c3-ce24-45be-9ee4-093692cbef79&id=' + sensorId, true);
+	req.open('GET', sensorUri + '/discover/connect?maker=a1b962c3-ce24-45be-9ee4-093692cbef79&id=' + encodeURIComponent(sensorId), true);
 	req.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
 	req.onload = function(e) {
 		if (req.readyState == 4 && req.status == 200) {
@@ -85,18 +129,55 @@ function connectKeepzer(sensorId) {
 				var response = JSON.parse(req.responseText);
 				if (!response.isError && response.key) {
 					keyValue = response.key;
-					document.getElementById('sensor_id').innerHTML = keyValue;
+					console.log("Connected. Key: " + keyValue);
+					sendKeyToken(keyValue);
 				} else {
+					if (!connecting)
+						return;
 					// still waiting
-					connectKeepzer();
+					connecting = false;
+					connectKeepzer(sensorId);
 				}
 			} else {
-				console.log("Error");
+				console.log("Connect error: " + response.errorCode + ", " + response.errorMessage);
 			}
 		}
 	};
 	req.send(null);
 }
+
+function cancelConnect() {
+	connecting = false;
+}
+
+function storeItemKeepzer(index) {
+	console.log("Storing item " + index);
+	if (!keytoken || options.items.length <= index || index < 0) {
+		console.log("Invalid item or not connected.");
+		return;
+	}
+
+	var item = options.items[index];
+
+	var req = new XMLHttpRequest();
+	req.open('POST', sensorUri + '/data/store', true);
+	req.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+	req.setRequestHeader("sensorkey", keytoken);
+	req.onload = function(e) {
+		if (req.readyState == 4 && req.status == 200) {
+			if (req.status == 200) {
+				console.log("Item logged: " + req.responseText);
+				var response = JSON.parse(req.responseText);
+			} else {
+				console.log("Error logging item: " + response.errorCode + ", " + response.errorMessage);
+			}
+		}
+	};
+	var data = JSON.stringify(item);
+	console.log("Sending: " + data);
+	req.send(data);
+}
+
 
 Pebble.addEventListener("ready", function() {
     initialised = true;
@@ -106,7 +187,7 @@ Pebble.addEventListener("ready", function() {
 Pebble.addEventListener("showConfiguration", function() {
 	var stringOptions = JSON.stringify(options);
     console.log("Showing config with options: " + stringOptions);
-	var uri = websiteUri + '#' + encodeURIComponent(stringOptions);
+	var uri = configUri + '#' + encodeURIComponent(stringOptions);
     Pebble.openURL(uri);
 });
 
@@ -127,22 +208,23 @@ Pebble.addEventListener("webviewclosed", function(e) {
 Pebble.addEventListener("appmessage", function(e) {
 	console.log("Received message (type: " + e.payload.type + ", Item: " + e.payload.item + ")");
 	switch(e.payload.type) {
-		case "status":
-			// fetch connection status
-			break;
-		case "log":
-			// log an item
-			break;
-		case "message":
-			// log an item
-			console.log("Message from Pebble: " + e.payload.message);
+		case "keytoken":
+			// the watch sends the current keytoken for item logging
+			console.log("Received token: " + e.payload.keyToken);
+			keytoken = e.payload.keyToken;
 			break;
 		case "connect":
-			break;
-		case "test_connection":
 			var token = Pebble.getAccountToken();
 			console.log("Account token: " + token);
-			sendAccountToken(token);
+			var sensorId = hex2base64(token);
+			sendSensorId(sensorId);
+			connectKeepzer(sensorId);
+			break;
+		case "cancel_connect":
+			cancelConnect();
+			break;
+		case "log":
+			storeItemKeepzer(e.payload.item);
 			break;
 	}
   }

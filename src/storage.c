@@ -3,6 +3,7 @@
 #include "storage.h"
 
 char s_key_token[128] = "\0";
+char s_sensor_id[128];
 ActivityItem s_activity_items[MAX_ACTIVITY_ITEMS];
 int s_active_item_count = 0;
 int current_item = 0;
@@ -57,4 +58,8 @@ void activity_set(int index, char *data) {
 
 void set_keytoken(char *data) {
 	strcpy(s_key_token, data);
+}
+
+void set_sensorid(char *data) {
+	strcpy(s_sensor_id, data);
 }

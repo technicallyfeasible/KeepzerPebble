@@ -15,6 +15,7 @@
 #define STORAGE_KEYTOKEN 3
 
 extern char s_key_token[128];
+extern char s_sensor_id[128];
 typedef struct {
   char name[MAX_ITEM_TEXT_LENGTH];
 } ActivityItem;
@@ -34,5 +35,6 @@ void load_keytoken();
 void activity_append(char *data);
 void activity_set(int index, char *data);
 void set_keytoken(char *data);
+void set_sensorid(char *data);
 
 #endif

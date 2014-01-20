@@ -4,8 +4,8 @@
     "appKeys": {
         "itemName": 11,
         "item": 10,
-        "keyToken": 20,
-        "message": 100,
+        "keyToken": 21,
+        "sensorId": 20,
         "itemCount": 12,
         "type": 0
     },

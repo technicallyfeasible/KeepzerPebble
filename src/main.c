@@ -6,6 +6,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+	
+/* Constants */
+static char* empty_text = "";
+static char* connect_text = "Press CONNECT to connect to your Keepzer account";
+static char* connecting_text = "Enter the id shown below in your Keepzer account to confirm the link";
+static char* connected_text = "CONNECTED and ready for logging";
+static char* notification_text_connected = "connected";
+static char* notification_text_disconnected = "not connected";
+static char* notification_text_connecting = "connecting...";
+static char* notification_text_pending = "%d logs pending";
 
 /* General window stuff */
 static Window *window;
@@ -35,8 +45,34 @@ static int screen_count = 1;
 
 
 static void select_current_item() {
-	//send_item(current_item);
-	get_account_token();
+	// state screen
+	if (current_item <= 0) {
+		switch(state) {
+			/* disconnected */
+			case 0:
+				connect();
+				state = 1;
+				break;
+			/* connecting */
+			case 1:
+				s_key_token[0] = 0;
+				state = 0;
+				store_keytoken();
+				cancel_connect();
+				sendKeyToken();
+				break;
+			/* connected */
+			case 2:
+				s_key_token[0] = 0;
+				state = 0;
+				store_keytoken();
+				sendKeyToken();
+				break;
+		}
+		layer_mark_dirty(state_layer);
+	}
+	else
+		send_item(current_item - 1);
 }
 
 static void destroy_property_animation(PropertyAnimation **animation) {
@@ -140,6 +176,9 @@ static void load_resources() {
 	logo_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_LOGO);
 }
 
+static void set_notification(char* text) {
+	text_layer_set_text(notification_text_layer, text);
+}
 static void create_logo_layer(Window *window) {
 	GRect logoBounds = logo_image->bounds;
 	logo_layer = bitmap_layer_create((GRect) { .origin = { 3, bounds.size.h - logoBounds.size.h }, .size = logoBounds.size });
@@ -154,7 +193,7 @@ static void create_logo_layer(Window *window) {
 	text_layer_set_font(notification_text_layer, statusFont);
 	text_layer_set_text_alignment(notification_text_layer, GTextAlignmentLeft);
 	text_layer_set_overflow_mode(notification_text_layer, GTextOverflowModeTrailingEllipsis);
-	text_layer_set_text(notification_text_layer, "Not connected");
+	//text_layer_set_text(notification_text_layer, "Not connected");
 	layer_add_child(window_get_root_layer(window), text_layer_get_layer(notification_text_layer));
 }
 
@@ -172,10 +211,20 @@ static void navi_layer_update_callback(Layer *me, GContext* ctx) {
 		graphics_draw_rect(ctx, GRect(bounds.size.w - 2, y, 2, length));
 	}
 	if(current_item == 0) {
-		if (strlen(s_key_token) == 0)
-			text_layer_set_text(confirm_text_layer, "CONNECT");
-		else
-			text_layer_set_text(confirm_text_layer, "DISCONNECT");
+		switch(state) {
+			/* disconnected */
+			case 0:
+				text_layer_set_text(confirm_text_layer, "CONNECT");
+				break;
+			/* connecting */
+			case 1:
+				text_layer_set_text(confirm_text_layer, "CANCEL");
+				break;
+			/* connected */
+			case 2:
+				text_layer_set_text(confirm_text_layer, "DISCONNECT");
+				break;
+		}
 	}
 	else
 		text_layer_set_text(confirm_text_layer, "LOG");
@@ -194,6 +243,32 @@ static void create_navi(Window *window) {
 }
 
 static void state_layer_update_callback(Layer *me, GContext* ctx) {
+	if (state_text_layer_top == NULL || state_text_layer_bottom == NULL)
+		return;
+	
+	char *topText = NULL, *bottomText = NULL;
+	switch(state) {
+		/* disconnected */
+		case 0:
+			topText = connect_text;
+			bottomText = empty_text;
+			set_notification(notification_text_disconnected);
+			break;
+		/* connecting */
+		case 1:
+			topText = connecting_text;
+			bottomText = s_sensor_id;
+			set_notification(notification_text_connecting);
+			break;
+		/* connected */
+		case 2:
+			topText = connected_text;
+			bottomText = empty_text;
+			set_notification(notification_text_connected);
+			break;
+	}
+	text_layer_set_text(state_text_layer_top, topText);
+	text_layer_set_text(state_text_layer_bottom, bottomText);
 }
 static void create_state_layer(Window *window) {
 	state_layer = layer_create(bounds);
@@ -216,14 +291,14 @@ static void create_state_layer(Window *window) {
 	text_layer_set_background_color(state_text_layer_top, GColorClear);
 	text_layer_set_font(state_text_layer_top, smallFont);
 	text_layer_set_text_alignment(state_text_layer_top, GTextAlignmentLeft);
-	text_layer_set_text(state_text_layer_top, "Press CONNECT to connect to your Keepzer account");
+	//text_layer_set_text(state_text_layer_top, "Press CONNECT to connect to your Keepzer account");
 	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_top));
 
 	state_text_layer_bottom = text_layer_create(GRect(0, posIndex * bounds.size.h + bounds.size.h / 2 + 12, bounds.size.w, (bounds.size.h / 2) - 40));
 	text_layer_set_background_color(state_text_layer_bottom, GColorClear);
 	text_layer_set_font(state_text_layer_bottom, bigFont);
-	text_layer_set_text_alignment(state_text_layer_bottom, GTextAlignmentCenter);
-	text_layer_set_text(state_text_layer_bottom, "DThzEzhoIx2GvRtj1");
+	text_layer_set_text_alignment(state_text_layer_bottom, GTextAlignmentLeft);
+	//text_layer_set_text(state_text_layer_bottom, "DThzEzhoIx2GvRtj1");
 	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_bottom));
 }
 static void add_event_layer(GFont font, int itemIndex, int posIndex) {
@@ -283,13 +358,13 @@ static void init(void) {
 	load_resources();
 
 	// check if we have a keytoken, if not then show the connection screen
-	if (strlen(s_key_token) == 0) {
+	if (strlen(s_key_token) == 0)
 		state = 0;
+	else {
+		state = 2;
+		sendKeyToken();
 	}
-	
-	//activity_append("screen 1");
-	//activity_append("screen 2");
-	
+		
 	create_logo_layer(window);
 	create_events(window);
 	create_state_layer(window);
@@ -313,6 +388,21 @@ int main(void) {
 	deinit();
 }
 
+
+void display_update_state() {
+	// if state indicates we are connected but there is no token then set state back to disconnected
+	if (strlen(s_key_token) == 0 && state > 1) {
+		state = 0;
+		layer_mark_dirty(state_layer);
+	}
+	// if state indicates we are disconnected but there is a token then set state to connected
+	else if (strlen(s_key_token) > 0 && state != 2) {
+		state = 2;
+		layer_mark_dirty(state_layer);
+	}
+	else if (state == 1)
+		layer_mark_dirty(state_layer);
+}
 
 void display_update_events() {
 	create_events(window);

@@ -4,16 +4,16 @@
 #include "storage.h"
 #include "display.h"
 
-const uint32_t inbound_size = 128;
-const uint32_t outbound_size = 128;
+const uint32_t inbound_size = 164;
+const uint32_t outbound_size = 164;
 
 static const char *message_type_log = "log";
 static const char *message_type_item = "item";
-static const char *message_type_state = "state";
-static const char *message_type_message = "message";
+static const char *message_type_sensorid = "sensorid";
 static const char *message_type_keytoken = "keytoken";
 static const char *message_type_account_token = "account_token";
 static const char *message_type_connect = "connect";
+static const char *message_type_cancel_connect = "cancel_connect";
 
 
 static void out_sent_handler(DictionaryIterator *sent, void *context) {
@@ -21,6 +21,12 @@ static void out_sent_handler(DictionaryIterator *sent, void *context) {
 }
 static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
 	// outgoing message failed
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Sending message failed. Trying again.");
+	Tuple *type_tuple = dict_find(failed, MESSAGE_TYPE);
+	APP_LOG(APP_LOG_LEVEL_DEBUG, type_tuple->value->cstring);
+
+	if (strcmp(type_tuple->value->cstring,message_type_keytoken) == 0)
+		sendKeyToken();
 }
 static void in_received_handler(DictionaryIterator *iter, void *context) {
     // incoming message received
@@ -37,13 +43,21 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 		Tuple *count_tuple = dict_find(iter, MESSAGE_ITEM_COUNT);
 		s_active_item_count = count_tuple->value->uint16;
 		activity_set(item_tuple->value->uint16, name_tuple->value->cstring);
-		display_update_events();
 		store_config();
+		display_update_events();
     }
+    else if (strcmp(type_tuple->value->cstring, message_type_sensorid) == 0) {
+		Tuple *token_tuple = dict_find(iter, MESSAGE_SENSORID);
+		APP_LOG(APP_LOG_LEVEL_DEBUG, token_tuple->value->cstring);
+		set_sensorid(token_tuple->value->cstring);
+		display_update_state();
+	}
     else if (strcmp(type_tuple->value->cstring, message_type_keytoken) == 0) {
 		Tuple *token_tuple = dict_find(iter, MESSAGE_KEYTOKEN);
 		APP_LOG(APP_LOG_LEVEL_DEBUG, token_tuple->value->cstring);
 		set_keytoken(token_tuple->value->cstring);
+		store_keytoken();
+		display_update_state();
 	}
 }
 static void in_dropped_handler(AppMessageResult reason, void *context) {
@@ -67,46 +81,11 @@ void init_messaging() {
 }
 
 
-void send_log(char *text) {
-	DictionaryIterator *iter;
-	app_message_outbox_begin(&iter);
-	dict_write_cstring(iter, MESSAGE_TYPE, message_type_message);
-	dict_write_cstring(iter, MESSAGE_MESSAGE, text);
-	app_message_outbox_send();
-}
-void script_log(char *format, int arg) {
-	char text[128];
-	mini_snprintf(text, 128, format, arg);
-	send_log(text);
-}
-void script_log2(char *format, int arg1, int arg2) {
-	char text[160];
-	mini_snprintf(text, 160, format, arg1, arg2);
-	send_log(text);
-}
-void script_log3(char *format, int arg1, int arg2, int arg3) {
-	char text[192];
-	mini_snprintf(text, 192, format, arg1, arg2, arg3);
-	send_log(text);
-}
-void script_log4(char *format, int arg1, int arg2, int arg3, int arg4) {
-	char text[256];
-	mini_snprintf(text, 256, format, arg1, arg2, arg3, arg4);
-	send_log(text);
-}
-
 void send_item(int current_item) {
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
 	dict_write_cstring(iter, MESSAGE_TYPE, message_type_log);
 	dict_write_int16(iter, MESSAGE_ITEM, current_item);
-	app_message_outbox_send();
-}
-
-void get_connection_state() {
-	DictionaryIterator *iter;
-	app_message_outbox_begin(&iter);
-	dict_write_cstring(iter, MESSAGE_TYPE, message_type_state);
 	app_message_outbox_send();
 }
 
@@ -118,10 +97,26 @@ void get_account_token() {
 	app_message_outbox_send();
 }
 
+/* cancel the current connection attempt */
+void cancel_connect() {
+	DictionaryIterator *iter;
+	app_message_outbox_begin(&iter);
+	dict_write_cstring(iter, MESSAGE_TYPE, message_type_cancel_connect);
+	app_message_outbox_send();
+}
 /* start a new connection attempt */
 void connect() {
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
 	dict_write_cstring(iter, MESSAGE_TYPE, message_type_connect);
+	app_message_outbox_send();
+}
+
+/* send keytoken to configuration side so it's available for logging */
+void sendKeyToken() {
+	DictionaryIterator *iter;
+	app_message_outbox_begin(&iter);
+	dict_write_cstring(iter, MESSAGE_TYPE, message_type_keytoken);
+	dict_write_cstring(iter, MESSAGE_KEYTOKEN, s_key_token);
 	app_message_outbox_send();
 }
