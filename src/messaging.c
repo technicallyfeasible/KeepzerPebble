@@ -4,11 +4,16 @@
 #include "storage.h"
 #include "display.h"
 
+const uint32_t inbound_size = 128;
+const uint32_t outbound_size = 128;
+
 static const char *message_type_log = "log";
 static const char *message_type_item = "item";
 static const char *message_type_state = "state";
 static const char *message_type_message = "message";
+static const char *message_type_keytoken = "keytoken";
 static const char *message_type_account_token = "account_token";
+static const char *message_type_connect = "connect";
 
 
 static void out_sent_handler(DictionaryIterator *sent, void *context) {
@@ -35,9 +40,10 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 		display_update_events();
 		store_config();
     }
-    else if (strcmp(type_tuple->value->cstring, message_type_account_token) == 0) {
-		Tuple *token_tuple = dict_find(iter, MESSAGE_ACCOUNTTOKEN);
+    else if (strcmp(type_tuple->value->cstring, message_type_keytoken) == 0) {
+		Tuple *token_tuple = dict_find(iter, MESSAGE_KEYTOKEN);
 		APP_LOG(APP_LOG_LEVEL_DEBUG, token_tuple->value->cstring);
+		set_keytoken(token_tuple->value->cstring);
 	}
 }
 static void in_dropped_handler(AppMessageResult reason, void *context) {
@@ -57,8 +63,6 @@ void init_messaging() {
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);
 
-	const uint32_t inbound_size = 128;
-	const uint32_t outbound_size = 128;
 	app_message_open(inbound_size, outbound_size);
 }
 
@@ -110,11 +114,14 @@ void get_connection_state() {
 void get_account_token() {
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
-	dict_write_cstring(iter, MESSAGE_ACCOUNTTOKEN, message_type_account_token);
+	dict_write_cstring(iter, MESSAGE_TYPE, message_type_account_token);
 	app_message_outbox_send();
 }
 
 /* start a new connection attempt */
 void connect() {
-	
+	DictionaryIterator *iter;
+	app_message_outbox_begin(&iter);
+	dict_write_cstring(iter, MESSAGE_TYPE, message_type_connect);
+	app_message_outbox_send();
 }

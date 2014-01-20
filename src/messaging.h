@@ -10,7 +10,7 @@
 #define MESSAGE_ITEM 10
 #define MESSAGE_ITEM_NAME 11
 #define MESSAGE_ITEM_COUNT 12
-#define MESSAGE_ACCOUNTTOKEN 20
+#define MESSAGE_KEYTOKEN 20
 #define MESSAGE_MESSAGE 100
 
 void init_messaging();

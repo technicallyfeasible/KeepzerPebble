@@ -7,37 +7,58 @@
 #include <string.h>
 
 
+/* General window stuff */
 static Window *window;
-static PropertyAnimation *prop_animation;
-
 static GRect bounds;
+
+/* Layers*/
 static BitmapLayer *logo_layer = NULL;
 static Layer *navi_layer = NULL;
 static TextLayer *confirm_text_layer = NULL;
-static TextLayer *status_text_layer = NULL;
 static Layer *events_layer = NULL;
+static PropertyAnimation *prop_animation;
+
+static Layer *state_layer = NULL;
+static TextLayer *state_text_layer_top = NULL;
+static TextLayer *state_text_layer_bottom = NULL;
+static PropertyAnimation *state_layer_animation;
+
+static TextLayer *notification_text_layer = NULL;
 
 static GBitmap *arrow_up_image;
 static GBitmap *arrow_down_image;
 static GBitmap *logo_image;
 
+static int state = 0;			// 0: disconnected, 1: connecting, 2: connected
 static int screen_count = 1;
 
 
 
 static void select_current_item() {
-	send_item(current_item);
+	//send_item(current_item);
+	get_account_token();
 }
 
-static void destroy_property_animation(PropertyAnimation **prop_animation) {
-	if (*prop_animation == NULL) {
+static void destroy_property_animation(PropertyAnimation **animation) {
+	if (*animation == NULL) {
 		return;
 	}
-	if (animation_is_scheduled((Animation*) *prop_animation)) {
-		animation_unschedule((Animation*) *prop_animation);
+	if (animation_is_scheduled((Animation*) *animation)) {
+		animation_unschedule((Animation*) *animation);
 	}
-	property_animation_destroy(*prop_animation);
-	*prop_animation = NULL;
+	property_animation_destroy(*animation);
+	*animation = NULL;
+}
+
+static void show_state(int from, int to) {
+	int height = bounds.size.h;
+	destroy_property_animation(&state_layer_animation);
+
+	GRect from_rect = GRect(0, from * bounds.size.h, bounds.size.w, height);
+	GRect to_rect = GRect(0, to * bounds.size.h, bounds.size.w, height);
+	state_layer_animation = property_animation_create_layer_frame(state_layer, &from_rect, &to_rect);
+	animation_set_duration((Animation*) state_layer_animation, 400);
+	animation_schedule((Animation*) state_layer_animation);
 }
 
 static void show_event(int index) {
@@ -46,20 +67,41 @@ static void show_event(int index) {
 	int height = bounds.size.h * (screen_count + 2);
 	destroy_property_animation(&prop_animation);
 
+	bool invert = false;
 	GRect from_rect = GRect(0, -(current_item + 1) * bounds.size.h, bounds.size.w, height);
 	if(index < 0) {
 		index = screen_count - 1;
 		from_rect.origin.y = -(screen_count + 1) * bounds.size.h;
+		invert = true;
 	}
 	else if(index >= screen_count) {
 		index = 0;
 		from_rect.origin.y = 0;
+		invert = true;
 	}
 	GRect to_rect = GRect(0, -(index + 1) * bounds.size.h, bounds.size.w, height);
 	prop_animation = property_animation_create_layer_frame(events_layer, &from_rect, &to_rect);
 	animation_set_duration((Animation*) prop_animation, 400);
 	animation_schedule((Animation*) prop_animation);
 
+	// if state is about to be shown or hidden then animate it
+	if (index == 0 || current_item == 0) {
+		int stateFrom = 0, stateTo = 0;
+		if (current_item == 1)
+			stateFrom = -1;
+		else if (current_item > 1)
+			stateFrom = 1;
+		if (index == 1)
+			stateTo = -1;
+		else if (index > 1)
+			stateTo = 1;
+		if (invert && screen_count == 2) {
+			stateFrom = -stateFrom;
+			stateTo = -stateTo;
+		}
+		show_state(stateFrom, stateTo);
+	}
+	
 	current_item = index;
 	layer_mark_dirty(navi_layer);
 }
@@ -107,13 +149,13 @@ static void create_logo_layer(Window *window) {
 	GFont statusFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 
 	int offset = 4;
-	TextLayer *status_text_layer = text_layer_create(GRect(logoBounds.size.w + 7, bounds.size.h - logoBounds.size.h + offset, bounds.size.w - logoBounds.size.w - 7, logoBounds.size.h - offset));
-	text_layer_set_background_color(status_text_layer, GColorClear);
-	text_layer_set_font(status_text_layer, statusFont);
-	text_layer_set_text_alignment(status_text_layer, GTextAlignmentLeft);
-	text_layer_set_overflow_mode(status_text_layer, GTextOverflowModeTrailingEllipsis);
-	text_layer_set_text(status_text_layer, "Not connected");
-	layer_add_child(window_get_root_layer(window), text_layer_get_layer(status_text_layer));
+	notification_text_layer = text_layer_create(GRect(logoBounds.size.w + 7, bounds.size.h - logoBounds.size.h + offset, bounds.size.w - logoBounds.size.w - 7, logoBounds.size.h - offset));
+	text_layer_set_background_color(notification_text_layer, GColorClear);
+	text_layer_set_font(notification_text_layer, statusFont);
+	text_layer_set_text_alignment(notification_text_layer, GTextAlignmentLeft);
+	text_layer_set_overflow_mode(notification_text_layer, GTextOverflowModeTrailingEllipsis);
+	text_layer_set_text(notification_text_layer, "Not connected");
+	layer_add_child(window_get_root_layer(window), text_layer_get_layer(notification_text_layer));
 }
 
 static void navi_layer_update_callback(Layer *me, GContext* ctx) {
@@ -151,7 +193,15 @@ static void create_navi(Window *window) {
 	text_layer_set_text(confirm_text_layer, "LOG");
 }
 
-static void add_state_layer(int posIndex) {
+static void state_layer_update_callback(Layer *me, GContext* ctx) {
+}
+static void create_state_layer(Window *window) {
+	state_layer = layer_create(bounds);
+	layer_set_update_proc(state_layer, state_layer_update_callback);
+	layer_add_child(window_get_root_layer(window), state_layer);
+
+	int posIndex = 0;
+	
 	GFont bigFont = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
 	GFont smallFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 
@@ -160,14 +210,21 @@ static void add_state_layer(int posIndex) {
 	text_layer_set_font(text_layer, bigFont);
 	text_layer_set_text_alignment(text_layer, GTextAlignmentLeft);
 	text_layer_set_text(text_layer, "Keepzer for Pebble");
-	layer_add_child(events_layer, text_layer_get_layer(text_layer));
+	layer_add_child(state_layer, text_layer_get_layer(text_layer));
 
-	text_layer = text_layer_create(GRect(2, posIndex * bounds.size.h + 24, bounds.size.w, (bounds.size.h / 2) - 24));
-	text_layer_set_background_color(text_layer, GColorClear);
-	text_layer_set_font(text_layer, smallFont);
-	text_layer_set_text_alignment(text_layer, GTextAlignmentLeft);
-	text_layer_set_text(text_layer, "Press CONNECT to connect to your Keepzer account");
-	layer_add_child(events_layer, text_layer_get_layer(text_layer));
+	state_text_layer_top = text_layer_create(GRect(2, posIndex * bounds.size.h + 24, bounds.size.w, (bounds.size.h / 2) - 24));
+	text_layer_set_background_color(state_text_layer_top, GColorClear);
+	text_layer_set_font(state_text_layer_top, smallFont);
+	text_layer_set_text_alignment(state_text_layer_top, GTextAlignmentLeft);
+	text_layer_set_text(state_text_layer_top, "Press CONNECT to connect to your Keepzer account");
+	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_top));
+
+	state_text_layer_bottom = text_layer_create(GRect(0, posIndex * bounds.size.h + bounds.size.h / 2 + 12, bounds.size.w, (bounds.size.h / 2) - 40));
+	text_layer_set_background_color(state_text_layer_bottom, GColorClear);
+	text_layer_set_font(state_text_layer_bottom, bigFont);
+	text_layer_set_text_alignment(state_text_layer_bottom, GTextAlignmentCenter);
+	text_layer_set_text(state_text_layer_bottom, "DThzEzhoIx2GvRtj1");
+	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_bottom));
 }
 static void add_event_layer(GFont font, int itemIndex, int posIndex) {
 	TextLayer *text_layer = text_layer_create(GRect(2, posIndex * bounds.size.h, bounds.size.w - 26, bounds.size.h));
@@ -192,15 +249,15 @@ static void create_events(Window *window) {
 		int offset = screen_count - s_active_item_count;
 		int i;
 		add_event_layer(font, s_active_item_count - 1, 0);
-		add_state_layer(1);
+		//add_state_layer(1);
 		for (i = 0; i < s_active_item_count; i++) {
 			add_event_layer(font, i, i + 1 + offset);
 		}
-		add_state_layer(screen_count + 1);
+		//add_state_layer(screen_count + 1);
 		//add_event_layer(font, 0, s_active_item_count + 1 + offset);
 	}
-	else
-		add_state_layer(1);
+	//else
+	//	add_state_layer(1);
 }
 
 static void config_provider(Window *window) {
@@ -226,16 +283,23 @@ static void init(void) {
 	load_resources();
 
 	// check if we have a keytoken, if not then show the connection screen
-	get_account_token();
+	if (strlen(s_key_token) == 0) {
+		state = 0;
+	}
+	
+	//activity_append("screen 1");
+	//activity_append("screen 2");
 	
 	create_logo_layer(window);
 	create_events(window);
+	create_state_layer(window);
 	create_navi(window);
 }
 
 static void deinit(void) {
 	store_config();
 	destroy_property_animation(&prop_animation);
+	destroy_property_animation(&state_layer_animation);
 
 	window_stack_remove(window, false);
 	window_destroy(window);

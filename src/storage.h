@@ -33,5 +33,6 @@ void load_keytoken();
 
 void activity_append(char *data);
 void activity_set(int index, char *data);
-	
+void set_keytoken(char *data);
+
 #endif

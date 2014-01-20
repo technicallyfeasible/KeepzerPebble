@@ -54,3 +54,7 @@ void activity_set(int index, char *data) {
 	}
 	strcpy(s_activity_items[index].name, data);
 }
+
+void set_keytoken(char *data) {
+	strcpy(s_key_token, data);
+}

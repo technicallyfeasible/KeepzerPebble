@@ -2,9 +2,9 @@
     "versionLabel": "1.0",
     "uuid": "1670af4f-193f-4921-be48-11376e71adc2",
     "appKeys": {
-        "accountToken": 20,
         "itemName": 11,
         "item": 10,
+        "keyToken": 20,
         "message": 100,
         "itemCount": 12,
         "type": 0
