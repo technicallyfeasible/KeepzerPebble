@@ -380,7 +380,7 @@ static void init(Window *window) {
 	// send pending items
 	//send_next_item();
 	if (s_active_item_count == 0)
-		activity_append("log me", "keepzer.calendar.event", "some.simple:xyz.test.stuff");
+		activity_append("log me", "keepzer.calendar.event", "{\"event\":\"log me\"}");
 		
 	create_logo_layer(window);
 	create_events(window);

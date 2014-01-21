@@ -56,7 +56,6 @@ void load_log() {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, text);
 }
 
-
 void activity_append(char *name, char* type, char* json) {
 	if (s_active_item_count >= MAX_ACTIVITY_ITEMS) { 
 		return;
@@ -75,14 +74,26 @@ void activity_set(int index, char *name, char* type, char* json) {
 	strcpy(s_activity_items[index].json, json);
 }
 
+/* copy a string to the destination and escape double quotes */
+void safestrcpy(char *dest, const char *src) {
+	int i, j;
+	for(i = 0, j = 0; src[i] != 0; i++, j++) {
+		char c = src[i];
+		if (c == '\\' || c == '\"')
+			dest[j++] = '\\';
+		dest[j] = c;
+	}
+	dest[j] = 0;
+}
+
 void logitem_append(int index, char* dateString) {
 	if (s_log_item_count >= MAX_ACTIVITY_ITEMS || index >= s_active_item_count) { 
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot append log item.");
 		return;
 	}
 	strcpy(s_log_items[s_log_item_count].date, dateString);
-	strcpy(s_log_items[s_log_item_count].type, s_activity_items[index].type);
-	strcpy(s_log_items[s_log_item_count].json, s_activity_items[index].json);
+	safestrcpy(s_log_items[s_log_item_count].type, s_activity_items[index].type);
+	safestrcpy(s_log_items[s_log_item_count].json, s_activity_items[index].json);
 	s_log_item_count++;
 
 	store_log();
