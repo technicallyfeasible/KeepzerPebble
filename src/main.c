@@ -380,7 +380,7 @@ static void init(Window *window) {
 	// send pending items
 	//send_next_item();
 	if (s_active_item_count == 0)
-		activity_append("log me", "keepzer.calendar.event", "\"some\".simple:xyz.test.stuff");
+		activity_append("log me", "keepzer.calendar.event", "some.simple:xyz.test.stuff");
 		
 	create_logo_layer(window);
 	create_events(window);
@@ -433,6 +433,8 @@ void display_update_state() {
 	/* Update notification bar */
 	if(s_log_item_count == 0)
 		set_notification(empty_text);
+	else if(s_log_item_count == 1)
+		set_notification("1 event pending");
 	else {
 		char text[32];
 		mini_snprintf(text, 32, "%d events pending", s_log_item_count);

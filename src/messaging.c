@@ -82,10 +82,12 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 		int result = token_tuple->value->uint8;
 		//APP_LOG(APP_LOG_LEVEL_DEBUG, result);
 		// if successful then remove the first log item and send the next one
-		if (result == 1)
+		// result: 0=cannot send, 1=success, 2=connect error, 3=bad item
+		if (result == 3 || result == 1)
 			logitem_remove(0);
 		logPending = false;
-		send_next_item();
+		if (result != 0 && result != 3)
+			send_next_item();
 	}
 }
 static void in_dropped_handler(AppMessageResult reason, void *context) {

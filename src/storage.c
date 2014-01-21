@@ -41,10 +41,6 @@ void load_keytoken() {
 }
 /* Store all log items in persistent storage */
 void store_log() {
-	char text[32];
-	mini_snprintf(text, sizeof(text), "%d events pending", s_log_item_count);
-	APP_LOG(APP_LOG_LEVEL_DEBUG, text);
-	
 	persist_write_int(STORAGE_LOG_COUNT, s_log_item_count);
 	persist_write_data(STORAGE_LOGS, s_log_items, sizeof(LogItem)*s_log_item_count);
 }

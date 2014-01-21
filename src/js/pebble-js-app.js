@@ -162,7 +162,7 @@ function storeItemKeepzer(itemDate, itemType, itemJson, done) {
 	console.log("Storing item");
 	if (!keytoken) {
 		console.log("No keytoken available, cannot send.");
-		if(done) done(false);
+		if(done) done(0);
 		return;
 	}
 
@@ -173,14 +173,19 @@ function storeItemKeepzer(itemDate, itemType, itemJson, done) {
 	req.onload = function(e) {
 		if (req.readyState != 4) return; 
 
-		var result = 0;
+		var responseType = req.getResponseHeader('Content-Type');
+		var result = 2;
 		if (req.status == 200) {
 			console.log("Item logged: " + req.responseText);
 			result = 1;
 		}
 		else {
-			var response = JSON.parse(req.responseText);
-			console.log("Error logging item: " + response.errorCode + ", " + response.errorMessage);
+			console.log("Error logging item: " + req.status + ", " + req.responseText);
+			if (responseType && responseType.indexOf('application/json') != -1) {
+				var response = JSON.parse(req.responseText);
+				if(response.isError)
+					result = 3;	// bad item
+			}
 		}
 		if(done) done(result);
 	};
