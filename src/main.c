@@ -2,6 +2,7 @@
 #include "mini-printf.h"
 #include "messaging.h"
 #include "storage.h"
+#include "display.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +43,8 @@ static GBitmap *logo_image;
 static int state = 0;			// 0: disconnected, 1: connecting, 2: connected
 static int screen_count = 1;
 
+static char notification_buffer[128] = "\0";
+
 
 
 static void select_current_item() {
@@ -72,7 +75,7 @@ static void select_current_item() {
 		layer_mark_dirty(state_layer);
 	}
 	else
-		send_item(current_item - 1);
+		queue_item(current_item - 1);
 }
 
 static void destroy_property_animation(PropertyAnimation **animation) {
@@ -177,23 +180,33 @@ static void load_resources() {
 }
 
 static void set_notification(char* text) {
-	text_layer_set_text(notification_text_layer, text);
+	if (notification_text_layer == NULL)
+		return;
+	strcpy(notification_buffer, text);
+	text_layer_set_text(notification_text_layer, notification_buffer);
 }
 static void create_logo_layer(Window *window) {
 	GRect logoBounds = logo_image->bounds;
+
+	// just to cancel out the background
+	TextLayer *text_layer = text_layer_create(GRect(0, bounds.size.h - logoBounds.size.h, bounds.size.w, logoBounds.size.h));
+	layer_add_child(window_get_root_layer(window), text_layer_get_layer(text_layer));
+	
+	// display logo
 	logo_layer = bitmap_layer_create((GRect) { .origin = { 3, bounds.size.h - logoBounds.size.h }, .size = logoBounds.size });
 	bitmap_layer_set_bitmap(logo_layer, logo_image);
 	layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(logo_layer));
 
 	GFont statusFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 
+	// display notofications
 	int offset = 4;
 	notification_text_layer = text_layer_create(GRect(logoBounds.size.w + 7, bounds.size.h - logoBounds.size.h + offset, bounds.size.w - logoBounds.size.w - 7, logoBounds.size.h - offset));
 	text_layer_set_background_color(notification_text_layer, GColorClear);
 	text_layer_set_font(notification_text_layer, statusFont);
 	text_layer_set_text_alignment(notification_text_layer, GTextAlignmentLeft);
 	text_layer_set_overflow_mode(notification_text_layer, GTextOverflowModeTrailingEllipsis);
-	//text_layer_set_text(notification_text_layer, "Not connected");
+	//text_layer_set_text(notification_text_layer, "noti");
 	layer_add_child(window_get_root_layer(window), text_layer_get_layer(notification_text_layer));
 }
 
@@ -252,19 +265,16 @@ static void state_layer_update_callback(Layer *me, GContext* ctx) {
 		case 0:
 			topText = connect_text;
 			bottomText = empty_text;
-			set_notification(notification_text_disconnected);
 			break;
 		/* connecting */
 		case 1:
 			topText = connecting_text;
 			bottomText = s_sensor_id;
-			set_notification(notification_text_connecting);
 			break;
 		/* connected */
 		case 2:
 			topText = connected_text;
 			bottomText = empty_text;
-			set_notification(notification_text_connected);
 			break;
 	}
 	text_layer_set_text(state_text_layer_top, topText);
@@ -343,11 +353,11 @@ static void config_provider(Window *window) {
 	window_single_click_subscribe(BUTTON_ID_DOWN, (ClickHandler) click_handler);
 }
 
-static void init(void) {
-	window = window_create();
+static void init(Window *window) {
+	/*window = window_create();
 	window_set_click_config_provider(window, (ClickConfigProvider) config_provider);
 	window_set_fullscreen(window, true);
-	window_stack_push(window, false);
+	window_stack_push(window, false);*/
 
 	Layer *window_layer = window_get_root_layer(window);
 	// Get the bounds of the window for sizing the text layer
@@ -356,6 +366,7 @@ static void init(void) {
 	init_messaging();
 	load_keytoken();
 	load_config();
+	load_log();
 
 	load_resources();
 
@@ -366,28 +377,42 @@ static void init(void) {
 		state = 2;
 		sendKeyToken();
 	}
+	// send pending items
+	//send_next_item();
+	if (s_active_item_count == 0)
+		activity_append("log me", "keepzer.calendar.event", "\"some\".simple:xyz.test.stuff");
 		
 	create_logo_layer(window);
 	create_events(window);
 	create_state_layer(window);
 	create_navi(window);
+	
+	display_update_state();
 }
 
-static void deinit(void) {
+static void deinit(Window *window) {
 	store_config();
 	destroy_property_animation(&prop_animation);
 	destroy_property_animation(&state_layer_animation);
 
-	window_stack_remove(window, false);
-	window_destroy(window);
 	layer_destroy(navi_layer);
 	layer_destroy(events_layer);
 }
 
 int main(void) {
-	init();
+	window = window_create();
+	window_set_click_config_provider(window, (ClickConfigProvider) config_provider);
+	window_set_fullscreen(window, true);
+	window_set_window_handlers(window, (WindowHandlers) {
+		.load = init,
+		.unload = deinit
+	});
+	window_stack_push(window, false);
+
+	//init();
 	app_event_loop();
-	deinit();
+	//deinit();
+	window_destroy(window);
 }
 
 
@@ -402,10 +427,21 @@ void display_update_state() {
 		state = 2;
 		layer_mark_dirty(state_layer);
 	}
-	else if (state == 1)
+	else if(state == 1)
 		layer_mark_dirty(state_layer);
+
+	/* Update notification bar */
+	if(s_log_item_count == 0)
+		set_notification(empty_text);
+	else {
+		char text[32];
+		mini_snprintf(text, 32, "%d events pending", s_log_item_count);
+		set_notification(text);
+	}
 }
 
 void display_update_events() {
 	create_events(window);
 }
+
+

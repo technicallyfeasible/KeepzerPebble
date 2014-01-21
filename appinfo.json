@@ -2,12 +2,16 @@
     "versionLabel": "1.0",
     "uuid": "1670af4f-193f-4921-be48-11376e71adc2",
     "appKeys": {
-        "itemName": 11,
+        "dataType": 31,
+        "type": 0,
         "item": 10,
+        "json": 32,
         "keyToken": 21,
+        "result": 1,
+        "date": 30,
         "sensorId": 20,
         "itemCount": 12,
-        "type": 0
+        "itemName": 11
     },
     "longName": "Keepzer for Pebble",
     "versionCode": 1,

@@ -1,5 +1,5 @@
-var configUri = "http://10.100.81.4:61722/other/pebble";
-var sensorUri = "http://10.100.81.4:61722/sensors/v1";
+var configUri = "http://10.100.81.106:61722/other/pebble";
+var sensorUri = "http://10.100.81.106:61722/sensors/v1";
 
 var initialised = false;
 var connecting = false;
@@ -31,12 +31,14 @@ function addMessage(message) {
 	sendMessages();
 }
 
-function sendItem(index, name, length) {
+function sendItem(index, item, length) {
 	var message = {
 		"type": "item",
 		"item": index,
-		"itemName": name,
-		"itemCount": length
+		"itemName": item.name,
+		"itemCount": length,
+		"dataType": item.dataType,
+		"json": item.jsonData
 	};
 	addMessage(message);
 }
@@ -45,7 +47,7 @@ function sendItems() {
 		return;
 	
 	for(var i = 0; i < options.items.length; i++)
-		sendItem(i, options.items[i].name, options.items.length);
+		sendItem(i, options.items[i], options.items.length);
 }
 
 function sendAccountToken(token) {
@@ -71,7 +73,12 @@ function sendKeyToken(token) {
 	addMessage(message);
 }
 
-function logItem(index) {
+function sendLogResult(result) {
+	var message = {
+		"type": "log_result",
+		"result": result
+	};
+	addMessage(message);
 }
 
 function hex2byte(c)
@@ -124,23 +131,24 @@ function connectKeepzer(sensorId) {
 	req.open('GET', sensorUri + '/discover/connect?maker=a1b962c3-ce24-45be-9ee4-093692cbef79&id=' + encodeURIComponent(sensorId), true);
 	req.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
 	req.onload = function(e) {
-		if (req.readyState == 4 && req.status == 200) {
-			if (req.status == 200) {
-				var response = JSON.parse(req.responseText);
-				if (!response.isError && response.key) {
-					keyValue = response.key;
-					console.log("Connected. Key: " + keyValue);
-					sendKeyToken(keyValue);
-				} else {
-					if (!connecting)
-						return;
-					// still waiting
-					connecting = false;
-					connectKeepzer(sensorId);
-				}
+		if (req.readyState != 4) return;
+		
+		if (req.status == 200) {
+			var response = JSON.parse(req.responseText);
+			if (!response.isError && response.key) {
+				keyValue = response.key;
+				console.log("Connected. Key: " + keyValue);
+				sendKeyToken(keyValue);
+				keytoken = keyValue;
 			} else {
-				console.log("Connect error: " + response.errorCode + ", " + response.errorMessage);
+				if (!connecting)
+					return;
+				// still waiting
+				connecting = false;
+				connectKeepzer(sensorId);
 			}
+		} else {
+			console.log("Connect error: " + req.status);
 		}
 	};
 	req.send(null);
@@ -150,29 +158,38 @@ function cancelConnect() {
 	connecting = false;
 }
 
-function storeItemKeepzer(index) {
-	console.log("Storing item " + index);
-	if (!keytoken || options.items.length <= index || index < 0) {
-		console.log("Invalid item or not connected.");
+function storeItemKeepzer(itemDate, itemType, itemJson, done) {
+	console.log("Storing item");
+	if (!keytoken) {
+		console.log("No keytoken available, cannot send.");
+		if(done) done(false);
 		return;
 	}
-
-	var item = options.items[index];
 
 	var req = new XMLHttpRequest();
 	req.open('POST', sensorUri + '/data/store', true);
 	req.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
 	req.setRequestHeader("sensorkey", keytoken);
 	req.onload = function(e) {
-		if (req.readyState == 4 && req.status == 200) {
-			if (req.status == 200) {
-				console.log("Item logged: " + req.responseText);
-				var response = JSON.parse(req.responseText);
-			} else {
-				console.log("Error logging item: " + response.errorCode + ", " + response.errorMessage);
-			}
+		if (req.readyState != 4) return; 
+
+		var result = 0;
+		if (req.status == 200) {
+			console.log("Item logged: " + req.responseText);
+			result = 1;
 		}
+		else {
+			var response = JSON.parse(req.responseText);
+			console.log("Error logging item: " + response.errorCode + ", " + response.errorMessage);
+		}
+		if(done) done(result);
 	};
+	var item = {
+		"created": itemDate,
+		"dataType": itemType,
+		"jsonData": itemJson
+	};
+
 	var data = JSON.stringify(item);
 	console.log("Sending: " + data);
 	req.send(data);
@@ -224,7 +241,12 @@ Pebble.addEventListener("appmessage", function(e) {
 			cancelConnect();
 			break;
 		case "log":
-			storeItemKeepzer(e.payload.item);
+			var itemDate = e.payload.date;
+			var itemType = e.payload.dataType;
+			var itemJson = e.payload.json;
+			storeItemKeepzer(itemDate, itemType, itemJson, function(result) {
+				sendLogResult(result);
+			});
 			break;
 	}
   }
