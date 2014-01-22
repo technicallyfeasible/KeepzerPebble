@@ -14,11 +14,11 @@
 #define MAX_LOG_ITEMS (20)
 
 #define STORAGE_ITEM_COUNT 0
-#define STORAGE_ITEMS 1
 #define STORAGE_ITEM_CURRENT 2
 #define STORAGE_KEYTOKEN 3
 #define STORAGE_LOG_COUNT 4
-#define STORAGE_LOGS 5
+#define STORAGE_ITEMS 20
+#define STORAGE_LOGS 100
 
 extern char s_key_token[128];
 extern char s_sensor_id[64];

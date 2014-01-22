@@ -324,27 +324,23 @@ static void add_event_layer(GFont font, int itemIndex, int posIndex) {
 static void create_events(Window *window) {
 	int screen_count = s_active_item_count + 1;
 	
-	if (events_layer != NULL)
-		layer_destroy(events_layer);
-
-	events_layer = layer_create(GRect(0, -(current_item + 1) * bounds.size.h, bounds.size.w, bounds.size.h * (screen_count + 2)));
-	layer_add_child(window_get_root_layer(window), events_layer);
+	if (events_layer == NULL) {
+		events_layer = layer_create(GRect(0, -(current_item + 1) * bounds.size.h, bounds.size.w, bounds.size.h * (screen_count + 2)));
+		layer_add_child(window_get_root_layer(window), events_layer);
+	}
+	else
+		layer_remove_child_layers(events_layer);
 
 	GFont font = fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
 	
-	if(s_active_item_count > 0) {
+	if (s_active_item_count > 0) {
 		int offset = screen_count - s_active_item_count;
 		int i;
 		add_event_layer(font, s_active_item_count - 1, 0);
-		//add_state_layer(1);
 		for (i = 0; i < s_active_item_count; i++) {
 			add_event_layer(font, i, i + 1 + offset);
 		}
-		//add_state_layer(screen_count + 1);
-		//add_event_layer(font, 0, s_active_item_count + 1 + offset);
 	}
-	//else
-	//	add_state_layer(1);
 }
 
 static void config_provider(Window *window) {

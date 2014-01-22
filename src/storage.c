@@ -17,7 +17,10 @@ int s_log_item_count;
 void store_config() {
 	persist_write_int(STORAGE_ITEM_CURRENT, current_item);
 	persist_write_int(STORAGE_ITEM_COUNT, s_active_item_count);
-	persist_write_data(STORAGE_ITEMS, s_activity_items, sizeof(ActivityItem)*s_active_item_count);
+	// each item has to be written separately because maximum value size is 256 bytes
+	for(int i = 0; i < s_active_item_count; i++) {
+		persist_write_data(STORAGE_ITEMS + i, &s_activity_items[i], sizeof(ActivityItem));
+	}
 }
 /* Load all activities in persistent storage */
 void load_config() {
@@ -29,7 +32,11 @@ void load_config() {
 		return;
     if (s_active_item_count > MAX_ACTIVITY_ITEMS)
 	  s_active_item_count = MAX_ACTIVITY_ITEMS;
-	persist_read_data(STORAGE_ITEMS, s_activity_items, sizeof(ActivityItem)*s_active_item_count);
+
+	// read each item separately
+	for(int i = 0; i < s_active_item_count; i++) {
+		persist_read_data(STORAGE_ITEMS + i, &s_activity_items[i], sizeof(ActivityItem));
+	}
 }
 /* Store the keytoken */
 void store_keytoken() {
@@ -42,18 +49,20 @@ void load_keytoken() {
 /* Store all log items in persistent storage */
 void store_log() {
 	persist_write_int(STORAGE_LOG_COUNT, s_log_item_count);
-	persist_write_data(STORAGE_LOGS, s_log_items, sizeof(LogItem)*s_log_item_count);
+	// each item has to be written separately because maximum value size is 256 bytes
+	for(int i = 0; i < s_log_item_count; i++) {
+		persist_write_data(STORAGE_LOGS + i, &s_log_items[i], sizeof(LogItem));
+	}
 }
 /* Load all log items from persistent storage */
 void load_log() {
 	s_log_item_count = persist_read_int(STORAGE_LOG_COUNT);
     if (s_log_item_count > MAX_LOG_ITEMS)
 	  s_log_item_count = MAX_LOG_ITEMS;
-	persist_read_data(STORAGE_LOGS, s_log_items, sizeof(LogItem)*s_log_item_count);
-
-	char text[32];
-	mini_snprintf(text, sizeof(text), "%d events pending", s_log_item_count);
-	APP_LOG(APP_LOG_LEVEL_DEBUG, text);
+	// load log items separately
+	for(int i = 0; i < s_log_item_count; i++) {
+		persist_read_data(STORAGE_LOGS + i, &s_log_items[i], sizeof(LogItem));
+	}
 }
 
 void activity_append(char *name, char* type, char* json) {

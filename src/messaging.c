@@ -56,10 +56,6 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 		activity_set(item_tuple->value->uint16, name, type, json);
 		store_config();
 		display_update_events();
-		
-		APP_LOG(APP_LOG_LEVEL_DEBUG, name);
-		APP_LOG(APP_LOG_LEVEL_DEBUG, type);
-		APP_LOG(APP_LOG_LEVEL_DEBUG, json);
     }
     else if (strcmp(type_tuple->value->cstring, message_type_sensorid) == 0) {
 		Tuple *token_tuple = dict_find(iter, MESSAGE_SENSORID);
