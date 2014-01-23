@@ -26,6 +26,18 @@
     "resources": {
         "media": [
             {
+                "characterRegex": "[a-zA-Z]",
+                "type": "font",
+                "name": "FONT_ROBOTO_30",
+                "file": "fonts/Roboto-BoldCondensed.ttf"
+            },
+            {
+                "characterRegex": "[57eit\\]c]",
+                "type": "font",
+                "name": "FONT_UNICONS_30",
+                "file": "fonts/unicons_30.ttf"
+            },
+            {
                 "menuIcon": true,
                 "type": "png",
                 "name": "IMAGE_LOGO",

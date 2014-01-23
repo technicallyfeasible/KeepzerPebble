@@ -3,6 +3,7 @@
 #include "messaging.h"
 #include "storage.h"
 #include "display.h"
+#include "settings.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -16,7 +17,18 @@ static char* connected_text = "CONNECTED and ready for logging";
 static char* notification_text_connected = "connected";
 static char* notification_text_disconnected = "not connected";
 static char* notification_text_connecting = "connecting...";
-static char* notification_text_pending = "%d logs pending";
+static char* notification_text_pending = "%d events pending";
+static char* notification_text_pending_one = "1 event pending";
+static char* navigation_text_connect = "CONNECT";
+static char* navigation_text_disconnect = "DISCONNECT";
+static char* navigation_text_cancel = "CANCEL";
+static char* navigation_text_log = "LOG";
+static char* navigation_text_start = "Start";
+static char* navigation_text_options = "Options";
+static char* text_start_title = "Connect\nto\nKeepzer";
+static char* text_start_subtitle = "(You must connect to make full use of the product)";
+
+GFont symbolFont, titleFont, subtitleFont, eventsFont, statusFont;
 
 /* General window stuff */
 static Window *window;
@@ -24,6 +36,9 @@ static GRect bounds;
 
 /* Layers*/
 static BitmapLayer *logo_layer = NULL;
+static Layer *notification_layer = NULL;
+static TextLayer *notification_text_layer = NULL;
+
 static Layer *navi_layer = NULL;
 static TextLayer *confirm_text_layer = NULL;
 static Layer *events_layer = NULL;
@@ -33,8 +48,6 @@ static Layer *state_layer = NULL;
 static TextLayer *state_text_layer_top = NULL;
 static TextLayer *state_text_layer_bottom = NULL;
 static PropertyAnimation *state_layer_animation;
-
-static TextLayer *notification_text_layer = NULL;
 
 static GBitmap *arrow_up_image;
 static GBitmap *arrow_down_image;
@@ -50,6 +63,15 @@ static char notification_buffer[128] = "\0";
 static void select_current_item() {
 	// state screen
 	if (current_item <= 0) {
+		Window *connect_window = window_create();
+		window_set_click_config_provider(connect_window, (ClickConfigProvider) settings_config_provider);
+		window_set_fullscreen(connect_window, true);
+		window_set_window_handlers(connect_window, (WindowHandlers) {
+			.load = init_settings,
+			.unload = deinit_settings
+		});
+		window_stack_push(connect_window, true);
+return;
 		switch(state) {
 			/* disconnected */
 			case 0:
@@ -188,26 +210,26 @@ static void set_notification(char* text) {
 static void create_logo_layer(Window *window) {
 	GRect logoBounds = logo_image->bounds;
 
-	// just to cancel out the background
-	TextLayer *text_layer = text_layer_create(GRect(0, bounds.size.h - logoBounds.size.h, bounds.size.w, logoBounds.size.h));
-	layer_add_child(window_get_root_layer(window), text_layer_get_layer(text_layer));
-	
-	// display logo
-	logo_layer = bitmap_layer_create((GRect) { .origin = { 3, bounds.size.h - logoBounds.size.h }, .size = logoBounds.size });
-	bitmap_layer_set_bitmap(logo_layer, logo_image);
-	layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(logo_layer));
+	notification_layer = layer_create(GRect(0, bounds.size.h - logoBounds.size.h, bounds.size.w, logoBounds.size.h));
+	layer_add_child(window_get_root_layer(window), notification_layer);
 
-	GFont statusFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+	// display logo
+	logo_layer = bitmap_layer_create((GRect) { .origin = { 3, 0 }, .size = logoBounds.size });
+	bitmap_layer_set_bitmap(logo_layer, logo_image);
+	layer_add_child(notification_layer, bitmap_layer_get_layer(logo_layer));
 
 	// display notofications
 	int offset = 4;
-	notification_text_layer = text_layer_create(GRect(logoBounds.size.w + 7, bounds.size.h - logoBounds.size.h + offset, bounds.size.w - logoBounds.size.w - 7, logoBounds.size.h - offset));
+	notification_text_layer = text_layer_create(GRect(logoBounds.size.w + 7, offset, bounds.size.w - logoBounds.size.w - 7, logoBounds.size.h - offset));
 	text_layer_set_background_color(notification_text_layer, GColorClear);
 	text_layer_set_font(notification_text_layer, statusFont);
 	text_layer_set_text_alignment(notification_text_layer, GTextAlignmentLeft);
 	text_layer_set_overflow_mode(notification_text_layer, GTextOverflowModeTrailingEllipsis);
 	//text_layer_set_text(notification_text_layer, "noti");
-	layer_add_child(window_get_root_layer(window), text_layer_get_layer(notification_text_layer));
+	layer_add_child(notification_layer, text_layer_get_layer(notification_text_layer));
+
+	// hide notification bar for state item, show for other items
+	layer_set_hidden(notification_layer, (current_item == 0 ? true : false));
 }
 
 static void navi_layer_update_callback(Layer *me, GContext* ctx) {
@@ -227,20 +249,23 @@ static void navi_layer_update_callback(Layer *me, GContext* ctx) {
 		switch(state) {
 			/* disconnected */
 			case 0:
-				text_layer_set_text(confirm_text_layer, "CONNECT");
+				text_layer_set_text(confirm_text_layer, navigation_text_start);
 				break;
 			/* connecting */
 			case 1:
-				text_layer_set_text(confirm_text_layer, "CANCEL");
+				text_layer_set_text(confirm_text_layer, navigation_text_cancel);
 				break;
 			/* connected */
 			case 2:
-				text_layer_set_text(confirm_text_layer, "DISCONNECT");
+				text_layer_set_text(confirm_text_layer, navigation_text_options);
 				break;
 		}
 	}
 	else
-		text_layer_set_text(confirm_text_layer, "LOG");
+		text_layer_set_text(confirm_text_layer, navigation_text_log);
+
+	// hide notification bar for state item, show for other items
+	layer_set_hidden(notification_layer, (current_item == 0 ? true : false));
 }
 static void create_navi(Window *window) {
 	navi_layer = layer_create(bounds);
@@ -288,30 +313,26 @@ static void create_state_layer(Window *window) {
 	layer_set_update_proc(state_layer, state_layer_update_callback);
 	layer_add_child(window_get_root_layer(window), state_layer);
 
-	
-	GFont bigFont = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
-	GFont smallFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-
-	TextLayer *text_layer = text_layer_create(GRect(2,0, bounds.size.w, bounds.size.h));
+	TextLayer *text_layer = text_layer_create(GRect(2, 33, bounds.size.w - 4, bounds.size.h - 73));
 	text_layer_set_background_color(text_layer, GColorClear);
-	text_layer_set_font(text_layer, bigFont);
-	text_layer_set_text_alignment(text_layer, GTextAlignmentLeft);
-	text_layer_set_text(text_layer, "Keepzer for Pebble");
+	text_layer_set_font(text_layer, titleFont);
+	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
+	text_layer_set_text(text_layer, text_start_title);
 	layer_add_child(state_layer, text_layer_get_layer(text_layer));
 
-	state_text_layer_top = text_layer_create(GRect(2, 24, bounds.size.w, (bounds.size.h / 2) - 24));
+	state_text_layer_top = text_layer_create(GRect(2, bounds.size.h - 40, bounds.size.w - 4, 40));
 	text_layer_set_background_color(state_text_layer_top, GColorClear);
-	text_layer_set_font(state_text_layer_top, smallFont);
-	text_layer_set_text_alignment(state_text_layer_top, GTextAlignmentLeft);
-	//text_layer_set_text(state_text_layer_top, "Press CONNECT to connect to your Keepzer account");
+	text_layer_set_font(state_text_layer_top, subtitleFont);
+	text_layer_set_text_alignment(state_text_layer_top, GTextAlignmentCenter);
+	text_layer_set_text(state_text_layer_top, text_start_subtitle);
 	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_top));
 
-	state_text_layer_bottom = text_layer_create(GRect(0, bounds.size.h / 2 + 12, bounds.size.w, (bounds.size.h / 2) - 40));
+	/*state_text_layer_bottom = text_layer_create(GRect(0, bounds.size.h / 2 + 12, bounds.size.w, (bounds.size.h / 2) - 40));
 	text_layer_set_background_color(state_text_layer_bottom, GColorClear);
 	text_layer_set_font(state_text_layer_bottom, bigFont);
 	text_layer_set_text_alignment(state_text_layer_bottom, GTextAlignmentLeft);
 	//text_layer_set_text(state_text_layer_bottom, "DThzEzhoIx2GvRtj1");
-	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_bottom));
+	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_bottom));*/
 }
 static void add_event_layer(GFont font, int itemIndex, int posIndex) {
 	TextLayer *text_layer = text_layer_create(GRect(2, posIndex * bounds.size.h, bounds.size.w - 26, bounds.size.h));
@@ -331,14 +352,12 @@ static void create_events(Window *window) {
 	else
 		layer_remove_child_layers(events_layer);
 
-	GFont font = fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
-	
 	if (s_active_item_count > 0) {
 		int offset = screen_count - s_active_item_count;
 		int i;
-		add_event_layer(font, s_active_item_count - 1, 0);
+		add_event_layer(eventsFont, s_active_item_count - 1, 0);
 		for (i = 0; i < s_active_item_count; i++) {
-			add_event_layer(font, i, i + 1 + offset);
+			add_event_layer(eventsFont, i, i + 1 + offset);
 		}
 	}
 }
@@ -396,6 +415,14 @@ static void deinit(Window *window) {
 }
 
 int main(void) {
+	/* load fonts */
+	symbolFont = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_UNICONS_30));
+	eventsFont = fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
+	titleFont = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_30));
+	subtitleFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+	statusFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+	
+	/* create main window */
 	window = window_create();
 	window_set_click_config_provider(window, (ClickConfigProvider) config_provider);
 	window_set_fullscreen(window, true);
@@ -405,10 +432,13 @@ int main(void) {
 	});
 	window_stack_push(window, false);
 
-	//init();
+	/* main event loop */
 	app_event_loop();
-	//deinit();
+	
 	window_destroy(window);
+	
+	/* unload fonts */
+	fonts_unload_custom_font(symbolFont);
 }
 
 
@@ -430,10 +460,10 @@ void display_update_state() {
 	if(s_log_item_count == 0)
 		set_notification(empty_text);
 	else if(s_log_item_count == 1)
-		set_notification("1 event pending");
+		set_notification(notification_text_pending_one);
 	else {
 		char text[32];
-		mini_snprintf(text, 32, "%d events pending", s_log_item_count);
+		mini_snprintf(text, 32, notification_text_pending, s_log_item_count);
 		set_notification(text);
 	}
 }

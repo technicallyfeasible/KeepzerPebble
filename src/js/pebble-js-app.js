@@ -138,8 +138,9 @@ function connectKeepzer(sensorId) {
 			if (!response.isError && response.key) {
 				keyValue = response.key;
 				console.log("Connected. Key: " + keyValue);
-				sendKeyToken(keyValue);
 				keytoken = keyValue;
+				window.localStorage.setItem('keytoken', keytoken);
+				sendKeyToken(keytoken);
 			} else {
 				if (!connecting)
 					return;
@@ -221,6 +222,9 @@ Pebble.addEventListener("webviewclosed", function(e) {
 		options = JSON.parse(stringOptions);
 		console.log("Storing options: " + stringOptions);
 		window.localStorage.setItem('options', stringOptions);
+	    keytoken = window.localStorage.getItem('keytoken');
+		if (keytoken)
+			sendKeyToken(keytoken);
 		sendItems();
     } else {
 		console.log("No options received");
@@ -228,12 +232,13 @@ Pebble.addEventListener("webviewclosed", function(e) {
 });
 
 Pebble.addEventListener("appmessage", function(e) {
-	console.log("Received message (type: " + e.payload.type + ", Item: " + e.payload.item + ")");
+	console.log("Received message (type: " + e.payload.type + ")");
 	switch(e.payload.type) {
 		case "keytoken":
 			// the watch sends the current keytoken for item logging
 			console.log("Received token: " + e.payload.keyToken);
 			keytoken = e.payload.keyToken;
+			window.localStorage.setItem('keytoken', keytoken);
 			break;
 		case "connect":
 			var token = Pebble.getAccountToken();
