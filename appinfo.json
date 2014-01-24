@@ -26,9 +26,9 @@
     "resources": {
         "media": [
             {
-                "characterRegex": "[a-zA-Z]",
+                "characterRegex": "[a-zA-Z .,!]",
                 "type": "font",
-                "name": "FONT_ROBOTO_30",
+                "name": "FONT_NEVIS_30",
                 "file": "fonts/Roboto-BoldCondensed.ttf"
             },
             {

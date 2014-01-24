@@ -23,16 +23,17 @@ static char* navigation_text_connect = "CONNECT";
 static char* navigation_text_disconnect = "DISCONNECT";
 static char* navigation_text_cancel = "CANCEL";
 static char* navigation_text_log = "LOG";
-static char* navigation_text_start = "Start";
-static char* navigation_text_options = "Options";
+static char* navigation_text_start = "START";
+static char* navigation_text_options = "";
 static char* text_start_title = "Connect\nto\nKeepzer";
 static char* text_start_subtitle = "(You must connect to make full use of the product)";
+static char* text_start_options = "Options";
 
 GFont symbolFont, titleFont, subtitleFont, eventsFont, statusFont;
 
 /* General window stuff */
 static Window *window;
-static GRect bounds;
+GRect bounds;
 
 /* Layers*/
 static BitmapLayer *logo_layer = NULL;
@@ -53,7 +54,7 @@ static GBitmap *arrow_up_image;
 static GBitmap *arrow_down_image;
 static GBitmap *logo_image;
 
-static int state = 0;			// 0: disconnected, 1: connecting, 2: connected
+static int state = 0, lastState = -1;			// 0: disconnected, 1: connecting, 2: connected
 static int screen_count = 1;
 
 static char notification_buffer[128] = "\0";
@@ -281,29 +282,34 @@ static void create_navi(Window *window) {
 }
 
 static void state_layer_update_callback(Layer *me, GContext* ctx) {
-	if (state_text_layer_top == NULL || state_text_layer_bottom == NULL)
+	if (state_text_layer_top == NULL || state_text_layer_bottom == NULL || lastState == state)
 		return;
 	
 	char *topText = NULL, *bottomText = NULL;
 	switch(state) {
 		/* disconnected */
 		case 0:
-			topText = connect_text;
-			bottomText = empty_text;
+			topText = text_start_title;
+			bottomText = text_start_subtitle;
 			break;
 		/* connecting */
 		case 1:
-			topText = connecting_text;
-			bottomText = s_sensor_id;
+			topText = text_start_options;
+			bottomText = empty_text;
 			break;
 		/* connected */
 		case 2:
-			topText = connected_text;
+			topText = text_start_options;
 			bottomText = empty_text;
 			break;
 	}
+	// resize title layer to center
+	GSize size = graphics_text_layout_get_content_size(topText, titleFont, GRect(2, 0, bounds.size.w - 4, bounds.size.h), GTextOverflowModeWordWrap, GTextAlignmentCenter);
+	layer_set_frame(text_layer_get_layer(state_text_layer_top), GRect(2, (bounds.size.h - size.h) / 2, bounds.size.w - 4, size.h));
 	text_layer_set_text(state_text_layer_top, topText);
 	text_layer_set_text(state_text_layer_bottom, bottomText);
+	
+	lastState = state;
 }
 static void create_state_layer(Window *window) {
 	int posIndex = 0;
@@ -313,26 +319,19 @@ static void create_state_layer(Window *window) {
 	layer_set_update_proc(state_layer, state_layer_update_callback);
 	layer_add_child(window_get_root_layer(window), state_layer);
 
-	TextLayer *text_layer = text_layer_create(GRect(2, 33, bounds.size.w - 4, bounds.size.h - 73));
-	text_layer_set_background_color(text_layer, GColorClear);
-	text_layer_set_font(text_layer, titleFont);
-	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-	text_layer_set_text(text_layer, text_start_title);
-	layer_add_child(state_layer, text_layer_get_layer(text_layer));
-
-	state_text_layer_top = text_layer_create(GRect(2, bounds.size.h - 40, bounds.size.w - 4, 40));
+	state_text_layer_top = text_layer_create(GRect(2, 33, bounds.size.w - 4, bounds.size.h - 73));
 	text_layer_set_background_color(state_text_layer_top, GColorClear);
-	text_layer_set_font(state_text_layer_top, subtitleFont);
+	text_layer_set_font(state_text_layer_top, titleFont);
 	text_layer_set_text_alignment(state_text_layer_top, GTextAlignmentCenter);
-	text_layer_set_text(state_text_layer_top, text_start_subtitle);
+	//text_layer_set_text(state_text_layer_top, text_start_title);
 	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_top));
 
-	/*state_text_layer_bottom = text_layer_create(GRect(0, bounds.size.h / 2 + 12, bounds.size.w, (bounds.size.h / 2) - 40));
+	state_text_layer_bottom = text_layer_create(GRect(2, bounds.size.h - 40, bounds.size.w - 4, 40));
 	text_layer_set_background_color(state_text_layer_bottom, GColorClear);
-	text_layer_set_font(state_text_layer_bottom, bigFont);
-	text_layer_set_text_alignment(state_text_layer_bottom, GTextAlignmentLeft);
-	//text_layer_set_text(state_text_layer_bottom, "DThzEzhoIx2GvRtj1");
-	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_bottom));*/
+	text_layer_set_font(state_text_layer_bottom, subtitleFont);
+	text_layer_set_text_alignment(state_text_layer_bottom, GTextAlignmentCenter);
+	//text_layer_set_text(state_text_layer_bottom, text_start_subtitle);
+	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_bottom));
 }
 static void add_event_layer(GFont font, int itemIndex, int posIndex) {
 	TextLayer *text_layer = text_layer_create(GRect(2, posIndex * bounds.size.h, bounds.size.w - 26, bounds.size.h));
@@ -418,7 +417,7 @@ int main(void) {
 	/* load fonts */
 	symbolFont = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_UNICONS_30));
 	eventsFont = fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
-	titleFont = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ROBOTO_30));
+	titleFont = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_NEVIS_30));
 	subtitleFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 	statusFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 	
@@ -439,6 +438,7 @@ int main(void) {
 	
 	/* unload fonts */
 	fonts_unload_custom_font(symbolFont);
+	fonts_unload_custom_font(titleFont);
 }
 
 

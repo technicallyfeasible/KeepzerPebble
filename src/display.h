@@ -6,7 +6,9 @@
 #ifndef __KEEPZER_DISPLAY__
 #define __KEEPZER_DISPLAY__
 
-extern GFont symbolFont;
+extern GRect bounds;
+
+extern GFont symbolFont, titleFont, subtitleFont, eventsFont, statusFont;
 
 void display_update_state();
 void display_update_events();
