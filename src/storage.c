@@ -1,5 +1,4 @@
 #include "pebble.h"
-#include "mini-printf.h"
 #include "storage.h"
 #include "display.h"
 
@@ -97,7 +96,7 @@ void safestrcpy(char *dest, const char *src) {
 
 void logitem_append(int index, char* dateString) {
 	if (s_log_item_count >= MAX_ACTIVITY_ITEMS || index >= s_active_item_count) { 
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot append log item.");
+		LOG("Cannot append log item.");
 		return;
 	}
 	strcpy(s_log_items[s_log_item_count].date, dateString);

@@ -1,5 +1,5 @@
-var configUri = "http://192.168.1.164:61722/other/pebble";
-var sensorUri = "http://192.168.1.164:61722/sensors/v1";
+var configUri = "http://10.100.81.223:61722/other/pebble";
+var sensorUri = "http://10.100.81.223:61722/sensors/v1";
 
 var initialised = false;
 var connecting = false;

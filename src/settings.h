@@ -6,11 +6,10 @@
 #ifndef __KEEPZER_SETTINGS__
 #define __KEEPZER_SETTINGS__
 
-/* configure click handlers */
-void settings_config_provider(Window *window);
-/* initialize the settings */
-void init_settings(Window *window);
-/* deinitialize the settings */
-void deinit_settings(Window *window);
+/* start the settings window */
+void settings_start();
+
+/* update the connection state */
+void settings_update_state();
 
 #endif

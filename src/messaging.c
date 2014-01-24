@@ -1,8 +1,8 @@
 #include "pebble.h"
-#include "mini-printf.h"
 #include "messaging.h"
 #include "storage.h"
 #include "display.h"
+#include "connect.h"
 
 const uint32_t inbound_size = 256;
 const uint32_t outbound_size = 512;
@@ -23,9 +23,9 @@ static void out_sent_handler(DictionaryIterator *sent, void *context) {
 }
 static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
 	// outgoing message failed
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Sending message failed. Trying again.");
+	LOG("Sending message failed. Trying again.");
 	Tuple *type_tuple = dict_find(failed, MESSAGE_TYPE);
-	APP_LOG(APP_LOG_LEVEL_DEBUG, type_tuple->value->cstring);
+	LOG(type_tuple->value->cstring);
 
 	if (strcmp(type_tuple->value->cstring, message_type_keytoken) == 0)
 		sendKeyToken();
@@ -39,8 +39,8 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 	// Check for fields you expect to receive
 	Tuple *type_tuple = dict_find(iter, MESSAGE_TYPE);
 
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Received app message");
-	APP_LOG(APP_LOG_LEVEL_DEBUG, type_tuple->value->cstring);
+	LOG("Received app message");
+	LOG(type_tuple->value->cstring);
 
 	// Received items
     if (strcmp(type_tuple->value->cstring, message_type_item) == 0) {
@@ -59,16 +59,18 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
     }
     else if (strcmp(type_tuple->value->cstring, message_type_sensorid) == 0) {
 		Tuple *token_tuple = dict_find(iter, MESSAGE_SENSORID);
-		APP_LOG(APP_LOG_LEVEL_DEBUG, token_tuple->value->cstring);
+		LOG(token_tuple->value->cstring);
 		set_sensorid(token_tuple->value->cstring);
 		display_update_state();
+		connect_update_state();
 	}
     else if (strcmp(type_tuple->value->cstring, message_type_keytoken) == 0) {
 		Tuple *token_tuple = dict_find(iter, MESSAGE_KEYTOKEN);
 		set_keytoken(token_tuple->value->cstring);
-		APP_LOG(APP_LOG_LEVEL_DEBUG, s_key_token);
+		LOG(s_key_token);
 		store_keytoken();
 		display_update_state();
+		connect_update_state();
 		
 		// we got a keytoken so we can send out pending events
 		send_next_item();
@@ -76,7 +78,6 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
     else if (strcmp(type_tuple->value->cstring, message_type_log_result) == 0) {
 		Tuple *token_tuple = dict_find(iter, MESSAGE_RESULT);
 		int result = token_tuple->value->uint8;
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, result);
 		// if successful then remove the first log item and send the next one
 		// result: 0=cannot send, 1=success, 2=connect error, 3=bad item
 		if (result == 3 || result == 1)
@@ -114,7 +115,7 @@ void queue_item(int current_item) {
 	struct tm *localDate = localtime(&date);
 	char formattedDate[MAX_ITEM_DATE_LENGTH];
 	strftime(formattedDate, MAX_ITEM_DATE_LENGTH, "%FT%TZ", localDate);
-	APP_LOG(APP_LOG_LEVEL_DEBUG, formattedDate);
+	LOG(formattedDate);
 	logitem_append(current_item, formattedDate);
 	
 	send_next_item();
@@ -126,7 +127,7 @@ void send_next_item() {
 	
 	LogItem *item = &s_log_items[0];
 
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Sending item.");
+	LOG("Sending item.");
 
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);

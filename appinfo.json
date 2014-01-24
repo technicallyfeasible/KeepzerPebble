@@ -26,13 +26,18 @@
     "resources": {
         "media": [
             {
-                "characterRegex": "[a-zA-Z .,!]",
-                "type": "font",
-                "name": "FONT_NEVIS_30",
-                "file": "fonts/Roboto-BoldCondensed.ttf"
+                "type": "png",
+                "name": "ICON_INFO",
+                "file": "images/icon_info.png"
             },
             {
-                "characterRegex": "[57eit\\]c]",
+                "type": "png",
+                "name": "ICON_DISCONNECT",
+                "file": "images/icon_disconnect.png"
+            },
+            {
+                "trackingAdjust": -10,
+                "characterRegex": "[1357eit\\]ce]",
                 "type": "font",
                 "name": "FONT_UNICONS_30",
                 "file": "fonts/unicons_30.ttf"
