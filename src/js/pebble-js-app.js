@@ -1,5 +1,6 @@
-var configUri = "http://10.100.81.223:61722/other/pebble";
-var sensorUri = "http://10.100.81.223:61722/sensors/v1";
+var configUri = "http://192.168.1.164:61722/other/pebble";
+var sensorUri = "http://192.168.1.164:61722/sensors/v1";
+var appId = "a1b962c3-ce24-45be-9ee4-093692cbef79";
 
 var initialised = false;
 var connecting = false;
@@ -11,13 +12,18 @@ var keytoken = "";		// token to use for pushing items into the store
 var messages = [];
 var isSending = false;
 
+	 
+function log(text) {
+	//console.log(text);
+}
+
 function appMessageAck(e) {
 	isSending = false;
 	sendMessages();
 }
 function appMessageNack(e) {
 	isSending = false;
-    console.log("Error sending message: " + e.error.message);
+    log("Error sending message: " + e.error.message);
 }
 function sendMessages() {
 	if(isSending || messages.length == 0) return;
@@ -125,10 +131,10 @@ function connectKeepzer(sensorId) {
 		return;
 	connecting = true;
 
-	console.log("Connecting sensor " + sensorId);
+	log("Connecting sensor " + sensorId);
 
 	var req = new XMLHttpRequest();
-	req.open('GET', sensorUri + '/discover/connect?maker=a1b962c3-ce24-45be-9ee4-093692cbef79&id=' + encodeURIComponent(sensorId), true);
+	req.open('GET', sensorUri + '/discover/connect?appId=' + appId + '&id=' + encodeURIComponent(sensorId), true);
 	req.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
 	req.onload = function(e) {
 		if (req.readyState != 4) return;
@@ -137,7 +143,7 @@ function connectKeepzer(sensorId) {
 			var response = JSON.parse(req.responseText);
 			if (!response.isError && response.key) {
 				keyValue = response.key;
-				console.log("Connected. Key: " + keyValue);
+				log("Connected. Key: " + keyValue);
 				keytoken = keyValue;
 				window.localStorage.setItem('keytoken', keytoken);
 				sendKeyToken(keytoken);
@@ -149,7 +155,7 @@ function connectKeepzer(sensorId) {
 				connectKeepzer(sensorId);
 			}
 		} else {
-			console.log("Connect error: " + req.status);
+			log("Connect error: " + req.status);
 		}
 	};
 	req.send(null);
@@ -160,9 +166,9 @@ function cancelConnect() {
 }
 
 function storeItemKeepzer(itemDate, itemType, itemJson, done) {
-	console.log("Storing item");
+	log("Storing item");
 	if (!keytoken) {
-		console.log("No keytoken available, cannot send.");
+		log("No keytoken available, cannot send.");
 		if(done) done(0);
 		return;
 	}
@@ -177,15 +183,15 @@ function storeItemKeepzer(itemDate, itemType, itemJson, done) {
 		var responseType = req.getResponseHeader('Content-Type');
 		var result = 2;
 		if (req.status == 200) {
-			console.log("Item logged: " + req.responseText);
+			log("Item logged: " + req.responseText);
 			result = 1;
 		}
 		else {
-			console.log("Error logging item: " + req.status + ", " + req.responseText);
+			log("Error logging item: " + req.status + ", " + req.responseText);
 			if (responseType && responseType.indexOf('application/json') != -1) {
 				var response = JSON.parse(req.responseText);
-				if(response.isError)
-					result = 3;	// bad item
+				if (response.isError)
+					result = (req.status == 401 ? 0 : 3);	// bad item (3) or unauthorized (0)
 			}
 		}
 		if(done) done(result);
@@ -197,7 +203,7 @@ function storeItemKeepzer(itemDate, itemType, itemJson, done) {
 	};
 
 	var data = JSON.stringify(item);
-	console.log("Sending: " + data);
+	log("Sending: " + data);
 	req.send(data);
 }
 
@@ -209,40 +215,40 @@ Pebble.addEventListener("ready", function() {
 
 Pebble.addEventListener("showConfiguration", function() {
 	var stringOptions = JSON.stringify(options);
-    console.log("Showing config with options: " + stringOptions);
+    log("Showing config with options: " + stringOptions);
 	var uri = configUri + '#' + encodeURIComponent(stringOptions);
     Pebble.openURL(uri);
 });
 
 Pebble.addEventListener("webviewclosed", function(e) {
-    console.log("configuration closed");
+    log("configuration closed");
     if (e.response != '') {
-		console.log("Options received: " + e.response);
+		log("Options received: " + e.response);
 		var stringOptions = decodeURIComponent(e.response).replace(/[+]/g, ' ');
 		options = JSON.parse(stringOptions);
-		console.log("Storing options: " + stringOptions);
+		log("Storing options: " + stringOptions);
 		window.localStorage.setItem('options', stringOptions);
 	    keytoken = window.localStorage.getItem('keytoken');
 		if (keytoken)
 			sendKeyToken(keytoken);
 		sendItems();
     } else {
-		console.log("No options received");
+		log("No options received");
     }
 });
 
 Pebble.addEventListener("appmessage", function(e) {
-	console.log("Received message (type: " + e.payload.type + ")");
+	log("Received message (type: " + e.payload.type + ")");
 	switch(e.payload.type) {
 		case "keytoken":
 			// the watch sends the current keytoken for item logging
-			console.log("Received token: " + e.payload.keyToken);
+			log("Received token: " + e.payload.keyToken);
 			keytoken = e.payload.keyToken;
 			window.localStorage.setItem('keytoken', keytoken);
 			break;
 		case "connect":
 			var token = Pebble.getAccountToken();
-			console.log("Account token: " + token);
+			log("Account token: " + token);
 			var sensorId = hex2base64(token);
 			sendSensorId(sensorId);
 			connectKeepzer(sensorId);
@@ -255,6 +261,7 @@ Pebble.addEventListener("appmessage", function(e) {
 			var itemType = e.payload.dataType;
 			var itemJson = e.payload.json;
 			storeItemKeepzer(itemDate, itemType, itemJson, function(result) {
+				log("Logged item: " + result);
 				sendLogResult(result);
 			});
 			break;

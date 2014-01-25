@@ -1,8 +1,9 @@
 #include "pebble.h"
 #include "storage.h"
 #include "display.h"
+#include "connect.h"
 
-char s_key_token[128] = "\0";
+char s_key_token[164] = "\0";
 char s_sensor_id[64];
 ActivityItem s_activity_items[MAX_ACTIVITY_ITEMS];
 int s_active_item_count = 0;
@@ -122,8 +123,13 @@ void logitem_remove(int index) {
 
 void set_keytoken(char *data) {
 	strcpy(s_key_token, data);
+	store_keytoken();
+	display_update_state();
+	connect_update_state();
 }
 
 void set_sensorid(char *data) {
 	strcpy(s_sensor_id, data);
+	display_update_state();
+	connect_update_state();
 }

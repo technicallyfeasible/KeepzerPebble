@@ -61,16 +61,11 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 		Tuple *token_tuple = dict_find(iter, MESSAGE_SENSORID);
 		LOG(token_tuple->value->cstring);
 		set_sensorid(token_tuple->value->cstring);
-		display_update_state();
-		connect_update_state();
 	}
     else if (strcmp(type_tuple->value->cstring, message_type_keytoken) == 0) {
 		Tuple *token_tuple = dict_find(iter, MESSAGE_KEYTOKEN);
 		set_keytoken(token_tuple->value->cstring);
 		LOG(s_key_token);
-		store_keytoken();
-		display_update_state();
-		connect_update_state();
 		
 		// we got a keytoken so we can send out pending events
 		send_next_item();
@@ -80,11 +75,18 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 		int result = token_tuple->value->uint8;
 		// if successful then remove the first log item and send the next one
 		// result: 0=cannot send, 1=success, 2=connect error, 3=bad item
+		char text[128];
+		snprintf(text, 128, "Result: %d", result);
+		LOG(text);
+		logPending = false;
 		if (result == 3 || result == 1)
 			logitem_remove(0);
-		logPending = false;
-		if (result != 0 && result != 3)
+		if (result == 1 || result == 2)	// success or general error, try again
 			send_next_item();
+		if (result == 0) {				// unauthorized, clear token and force reauth
+			LOG("Connect error. Reset keytoken.");
+			set_keytoken("\0");
+		}
 	}
 }
 static void in_dropped_handler(AppMessageResult reason, void *context) {
