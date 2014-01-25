@@ -6,8 +6,8 @@
 #ifndef __KEEPZER_DISPLAY__
 #define __KEEPZER_DISPLAY__
 
-//#define LOG(text) APP_LOG(APP_LOG_LEVEL_DEBUG, text)
-#define LOG(text) 
+#define LOG(text) APP_LOG(APP_LOG_LEVEL_DEBUG, text)
+//#define LOG(text) 
 	
 extern GRect bounds;
 

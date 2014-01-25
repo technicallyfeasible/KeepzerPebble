@@ -69,30 +69,6 @@ static void select_current_item() {
 			// start connection process
 			connect_start();
 		}
-
-/*		switch(state) {
-			// disconnected
-			case 0:
-				connect();
-				state = 1;
-				break;
-			// connecting
-			case 1:
-				s_key_token[0] = 0;
-				state = 0;
-				store_keytoken();
-				cancel_connect();
-				sendKeyToken();
-				break;
-			// connected
-			case 2:
-				s_key_token[0] = 0;
-				state = 0;
-				store_keytoken();
-				sendKeyToken();
-				break;
-		}
-		layer_mark_dirty(state_layer);*/
 	}
 	else
 		queue_item(current_item - 1);
@@ -423,6 +399,7 @@ static void deinit(Window *window) {
 
 	layer_destroy(navi_layer);
 	layer_destroy(events_layer);
+	state_layer = NULL;
 	
 	unload_resources();
 }

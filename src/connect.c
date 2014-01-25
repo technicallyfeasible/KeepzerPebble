@@ -157,8 +157,8 @@ static void set_step(int nextStep) {
 	Layer *current_layer = get_layer(step);
 	Layer *next_layer = get_layer(nextStep);
 
-	destroy_property_animation(&out_animation);
-	destroy_property_animation(&in_animation);
+	//destroy_property_animation(&out_animation);
+	//destroy_property_animation(&in_animation);
 
 	if (current_layer != NULL) {
 		GRect from_rect = GRect(0, 0, bounds.size.w, bounds.size.h);
@@ -229,11 +229,14 @@ void init_connect(Window *window) {
 
 /* deinitialize the settings */
 void deinit_connect(Window *window) {
-	cancel_connect();
+	// if we have a keytoken we don't have to cancel anymore
+	if (strlen(s_key_token) == 0)
+		cancel_connect();
 	step = 0;
 	
 	destroy_property_animation(&out_animation);
 	destroy_property_animation(&in_animation);
+	code_text_layer = NULL;
 }
 
 
