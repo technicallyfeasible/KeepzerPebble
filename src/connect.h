@@ -8,6 +8,8 @@
 
 /* start the connection process */
 void connect_start();
+/* destroy connect process resources */
+void connect_destroy();
 
 /* update the connection state */
 void connect_update_state();

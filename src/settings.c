@@ -4,6 +4,7 @@
 #include "storage.h"
 #include "messaging.h"
 
+static Window *settings_window = NULL;
 static SimpleMenuLayer *menu_layer = NULL;
 
 #define MENU_HELP 0
@@ -74,18 +75,27 @@ void init_settings(Window *window) {
 
 /* deinitialize the settings */
 void deinit_settings(Window *window) {
+	simple_menu_layer_destroy(menu_layer);
 }
 
 /* start the settings window */
 void settings_start() {
-	Window *settings_window = window_create();
-	window_set_click_config_provider(settings_window, (ClickConfigProvider) settings_config_provider);
-	window_set_fullscreen(settings_window, true);
-	window_set_window_handlers(settings_window, (WindowHandlers) {
-		.load = init_settings,
-		.unload = deinit_settings
-	});
+	if (settings_window == NULL) {
+		settings_window = window_create();
+		window_set_click_config_provider(settings_window, (ClickConfigProvider) settings_config_provider);
+		window_set_fullscreen(settings_window, true);
+		window_set_window_handlers(settings_window, (WindowHandlers) {
+			.load = init_settings,
+			.unload = deinit_settings
+		});
+	}
 	window_stack_push(settings_window, true);
+}
+/* destroy settings resource */
+void settings_destroy() {
+	if (settings_window == NULL)
+		return;
+	window_destroy(settings_window);
 }
 
 /* update the connection state */

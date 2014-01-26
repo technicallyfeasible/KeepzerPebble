@@ -15,6 +15,7 @@ extern GBitmap *arrow_up_image, *arrow_down_image, *logo_image, *icon_info, *ico
 extern GFont symbolFont, titleFont, subtitleFont, eventsFont, statusFont, smallFont, tinyFont;
 
 void destroy_property_animation(PropertyAnimation **animation);
+void animation_done(struct Animation *animation, bool finished, void *context);
 void display_update_state();
 void display_update_events();
 

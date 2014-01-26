@@ -11,17 +11,8 @@
 	
 /* Constants */
 static char* empty_text = "";
-static char* connect_text = "Press CONNECT to connect to your Keepzer account";
-static char* connecting_text = "Enter the id shown below in your Keepzer account to confirm the link";
-static char* connected_text = "CONNECTED and ready for logging";
-static char* notification_text_connected = "connected";
-static char* notification_text_disconnected = "not connected";
-static char* notification_text_connecting = "connecting...";
 static char* notification_text_pending = "%d events pending";
 static char* notification_text_pending_one = "1 event pending";
-static char* navigation_text_connect = "CONNECT";
-static char* navigation_text_disconnect = "DISCONNECT";
-static char* navigation_text_cancel = "CANCEL";
 static char* navigation_text_log = "5";
 static char* navigation_text_start = "3";
 static char* navigation_text_options = "";
@@ -43,6 +34,8 @@ static TextLayer *notification_text_layer = NULL;
 static Layer *navi_layer = NULL;
 static TextLayer *confirm_text_layer = NULL;
 static Layer *events_layer = NULL;
+static TextLayer *events_layer_texts[MAX_ACTIVITY_ITEMS + 1];
+static int events_layer_texts_count = 0;
 static PropertyAnimation *prop_animation;
 
 static Layer *state_layer = NULL;
@@ -83,6 +76,9 @@ void destroy_property_animation(PropertyAnimation **animation) {
 	}
 	property_animation_destroy(*animation);
 	*animation = NULL;
+}
+void animation_done(Animation *animation, bool finished, void *context) {
+	destroy_property_animation((PropertyAnimation**) &animation);
 }
 
 static void show_state(int from, int to) {
@@ -144,8 +140,6 @@ static void show_event(int index) {
 static void click_handler(ClickRecognizerRef recognizer, Window *window) {
 	int screen_count = s_active_item_count + 1;
 	
-	LOG("Navigate");
-
 	int next_item = current_item;
 	switch (click_recognizer_get_button_id(recognizer)) {
 		case BUTTON_ID_UP:
@@ -238,7 +232,6 @@ static void navi_layer_update_callback(Layer *me, GContext* ctx) {
 				break;
 			/* connecting */
 			case 1:
-				text_layer_set_text(confirm_text_layer, navigation_text_cancel);
 				break;
 			/* connected */
 			case 2:
@@ -269,7 +262,7 @@ static void create_navi(Window *window) {
 static void state_layer_update_callback(Layer *me, GContext* ctx) {
 	if (state_text_layer_top == NULL || state_text_layer_bottom == NULL || lastState == state)
 		return;
-	
+
 	char *topText = NULL, *bottomText = NULL;
 	switch(state) {
 		/* disconnected */
@@ -325,6 +318,14 @@ static void add_event_layer(GFont font, int itemIndex, int posIndex) {
 	text_layer_set_text_alignment(text_layer, GTextAlignmentLeft);
 	text_layer_set_text(text_layer, s_activity_items[itemIndex].name);
 	layer_add_child(events_layer, text_layer_get_layer(text_layer));
+	
+	events_layer_texts[events_layer_texts_count++] = text_layer;
+}
+static void destroy_events() {
+	layer_remove_child_layers(events_layer);
+	for (int i = 0; i < events_layer_texts_count; i++)
+		text_layer_destroy(events_layer_texts[i]);
+	events_layer_texts_count = 0;
 }
 static void create_events(Window *window) {
 	int screen_count = s_active_item_count + 1;
@@ -334,7 +335,7 @@ static void create_events(Window *window) {
 		layer_add_child(window_get_root_layer(window), events_layer);
 	}
 	else
-		layer_remove_child_layers(events_layer);
+		destroy_events();
 
 	if (s_active_item_count > 0) {
 		int offset = screen_count - s_active_item_count;
@@ -353,11 +354,6 @@ static void config_provider(Window *window) {
 }
 
 static void init(Window *window) {
-	/*window = window_create();
-	window_set_click_config_provider(window, (ClickConfigProvider) config_provider);
-	window_set_fullscreen(window, true);
-	window_stack_push(window, false);*/
-
 	Layer *window_layer = window_get_root_layer(window);
 	// Get the bounds of the window for sizing the text layer
 	bounds = layer_get_bounds(window_layer);
@@ -398,10 +394,22 @@ static void deinit(Window *window) {
 	destroy_property_animation(&state_layer_animation);
 
 	layer_destroy(navi_layer);
+	text_layer_destroy(confirm_text_layer);
 	layer_destroy(events_layer);
+	destroy_events();
+	bitmap_layer_destroy(logo_layer);
+	layer_destroy(notification_layer);
+	text_layer_destroy(notification_text_layer);
+	layer_destroy(state_layer);
+	text_layer_destroy(state_text_layer_top);
+	text_layer_destroy(state_text_layer_bottom);
 	state_layer = NULL;
 	
+	connect_destroy();
+	settings_destroy();
+	
 	unload_resources();
+	deinit_messaging();
 }
 
 int main(void) {

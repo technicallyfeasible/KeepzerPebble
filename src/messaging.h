@@ -18,6 +18,7 @@
 #define MESSAGE_JSON 32
 
 void init_messaging();
+void deinit_messaging();
 
 void queue_item(int current_item);
 void send_next_item();

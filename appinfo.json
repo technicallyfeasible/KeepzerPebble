@@ -37,7 +37,7 @@
             },
             {
                 "trackingAdjust": -10,
-                "characterRegex": "[1357eit\\]ce]",
+                "characterRegex": "[35tc]",
                 "type": "font",
                 "name": "FONT_UNICONS_30",
                 "file": "fonts/unicons_30.ttf"

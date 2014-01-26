@@ -21,7 +21,7 @@
 #define STORAGE_LOGS 100
 
 extern char s_key_token[164];
-extern char s_sensor_id[64];
+extern char s_sensor_id[32];
 typedef struct {
   char name[MAX_ITEM_TEXT_LENGTH];
   char type[MAX_ITEM_TYPE_LENGTH];

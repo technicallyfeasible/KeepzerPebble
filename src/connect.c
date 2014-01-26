@@ -4,14 +4,23 @@
 #include "storage.h"
 #include "messaging.h"
 
+Window *connect_window = NULL;
 static TextLayer *navi_text_layer = NULL;
 static Layer *step1_layer = NULL;
+static TextLayer *step1_layer_text = NULL;
 static Layer *step2_layer = NULL;
+static TextLayer *step2_layer_text = NULL;
+static TextLayer *step2_layer_text_bottom = NULL;
 static Layer *step3_layer = NULL;
+static TextLayer *step3_layer_text = NULL;
 static Layer *step4_layer = NULL;
+static TextLayer *step4_layer_text = NULL;
 static Layer *step5_layer = NULL;
-static Layer *step6_layer = NULL;
+static TextLayer *step5_layer_text = NULL;
 static TextLayer *code_text_layer = NULL;
+static Layer *step6_layer = NULL;
+static TextLayer *step6_layer_text = NULL;
+static TextLayer *step6_layer_text_bottom = NULL;
 
 static int step = 0;
 
@@ -44,67 +53,67 @@ static void create_step1(Window *window) {
 	step1_layer = layer_create(bounds);
 	layer_add_child(window_get_root_layer(window), step1_layer);
 	
-	TextLayer *text_layer = text_layer_create(GRect(0, 0, bounds.size.w - 8, bounds.size.h));
-	text_layer_set_background_color(text_layer, GColorClear);
-	text_layer_set_font(text_layer, titleFont);
-	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-	text_layer_set_text(text_layer, text_connect_step1);
-	layer_add_child(step1_layer, text_layer_get_layer(text_layer));
+	step1_layer_text = text_layer_create(GRect(0, 0, bounds.size.w - 8, bounds.size.h));
+	text_layer_set_background_color(step1_layer_text, GColorClear);
+	text_layer_set_font(step1_layer_text, titleFont);
+	text_layer_set_text_alignment(step1_layer_text, GTextAlignmentCenter);
+	text_layer_set_text(step1_layer_text, text_connect_step1);
+	layer_add_child(step1_layer, text_layer_get_layer(step1_layer_text));
 }
 
 static void create_step2(Window *window) {
 	step2_layer = layer_create(GRect(bounds.size.w, 0, bounds.size.w, bounds.size.h));
 	layer_add_child(window_get_root_layer(window), step2_layer);
 	
-	TextLayer *text_layer = text_layer_create(GRect(0, 10, bounds.size.w - 8, bounds.size.h - 50));
-	text_layer_set_background_color(text_layer, GColorClear);
-	text_layer_set_font(text_layer, titleFont);
-	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-	text_layer_set_text(text_layer, text_connect_step2);
-	layer_add_child(step2_layer, text_layer_get_layer(text_layer));
+	step2_layer_text = text_layer_create(GRect(0, 10, bounds.size.w - 8, bounds.size.h - 50));
+	text_layer_set_background_color(step2_layer_text, GColorClear);
+	text_layer_set_font(step2_layer_text, titleFont);
+	text_layer_set_text_alignment(step2_layer_text, GTextAlignmentCenter);
+	text_layer_set_text(step2_layer_text, text_connect_step2);
+	layer_add_child(step2_layer, text_layer_get_layer(step2_layer_text));
 
-	text_layer = text_layer_create(GRect(0, bounds.size.h - 45, bounds.size.w - 8, 45));
-	text_layer_set_background_color(text_layer, GColorClear);
-	text_layer_set_font(text_layer, smallFont);
-	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-	text_layer_set_text(text_layer, text_connect_step2_bottom);
-	layer_add_child(step2_layer, text_layer_get_layer(text_layer));
+	step2_layer_text_bottom = text_layer_create(GRect(0, bounds.size.h - 45, bounds.size.w - 8, 45));
+	text_layer_set_background_color(step2_layer_text_bottom, GColorClear);
+	text_layer_set_font(step2_layer_text_bottom, smallFont);
+	text_layer_set_text_alignment(step2_layer_text_bottom, GTextAlignmentCenter);
+	text_layer_set_text(step2_layer_text_bottom, text_connect_step2_bottom);
+	layer_add_child(step2_layer, text_layer_get_layer(step2_layer_text_bottom));
 }
 
 static void create_step3(Window *window) {
 	step3_layer = layer_create(GRect(bounds.size.w, 0, bounds.size.w, bounds.size.h));
 	layer_add_child(window_get_root_layer(window), step3_layer);
 	
-	TextLayer *text_layer = text_layer_create(GRect(0, 3, bounds.size.w - 8, bounds.size.h));
-	text_layer_set_background_color(text_layer, GColorClear);
-	text_layer_set_font(text_layer, titleFont);
-	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-	text_layer_set_text(text_layer, text_connect_step3);
-	layer_add_child(step3_layer, text_layer_get_layer(text_layer));
+	step3_layer_text = text_layer_create(GRect(0, 3, bounds.size.w - 8, bounds.size.h));
+	text_layer_set_background_color(step3_layer_text, GColorClear);
+	text_layer_set_font(step3_layer_text, titleFont);
+	text_layer_set_text_alignment(step3_layer_text, GTextAlignmentCenter);
+	text_layer_set_text(step3_layer_text, text_connect_step3);
+	layer_add_child(step3_layer, text_layer_get_layer(step3_layer_text));
 }
 
 static void create_step4(Window *window) {
 	step4_layer = layer_create(GRect(bounds.size.w, 0, bounds.size.w, bounds.size.h));
 	layer_add_child(window_get_root_layer(window), step4_layer);
 	
-	TextLayer *text_layer = text_layer_create(GRect(0, 3, bounds.size.w - 8, bounds.size.h));
-	text_layer_set_background_color(text_layer, GColorClear);
-	text_layer_set_font(text_layer, titleFont);
-	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-	text_layer_set_text(text_layer, text_connect_step4);
-	layer_add_child(step4_layer, text_layer_get_layer(text_layer));
+	step4_layer_text = text_layer_create(GRect(0, 3, bounds.size.w - 8, bounds.size.h));
+	text_layer_set_background_color(step4_layer_text, GColorClear);
+	text_layer_set_font(step4_layer_text, titleFont);
+	text_layer_set_text_alignment(step4_layer_text, GTextAlignmentCenter);
+	text_layer_set_text(step4_layer_text, text_connect_step4);
+	layer_add_child(step4_layer, text_layer_get_layer(step4_layer_text));
 }
 
 static void create_step5(Window *window) {
 	step5_layer = layer_create(GRect(bounds.size.w, 0, bounds.size.w, bounds.size.h));
 	layer_add_child(window_get_root_layer(window), step5_layer);
 	
-	TextLayer *text_layer = text_layer_create(GRect(0, 30, bounds.size.w, bounds.size.h - 105));
-	text_layer_set_background_color(text_layer, GColorClear);
-	text_layer_set_font(text_layer, titleFont);
-	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-	text_layer_set_text(text_layer, text_connect_step5);
-	layer_add_child(step5_layer, text_layer_get_layer(text_layer));
+	step5_layer_text = text_layer_create(GRect(0, 30, bounds.size.w, bounds.size.h - 105));
+	text_layer_set_background_color(step5_layer_text, GColorClear);
+	text_layer_set_font(step5_layer_text, titleFont);
+	text_layer_set_text_alignment(step5_layer_text, GTextAlignmentCenter);
+	text_layer_set_text(step5_layer_text, text_connect_step5);
+	layer_add_child(step5_layer, text_layer_get_layer(step5_layer_text));
 
 	code_text_layer = text_layer_create(GRect(0, bounds.size.h - 65, bounds.size.w - 8, 65));
 	text_layer_set_background_color(code_text_layer, GColorClear);
@@ -118,19 +127,19 @@ static void create_step6(Window *window) {
 	step6_layer = layer_create(GRect(bounds.size.w, 0, bounds.size.w, bounds.size.h));
 	layer_add_child(window_get_root_layer(window), step6_layer);
 	
-	TextLayer *text_layer = text_layer_create(GRect(0, 10, bounds.size.w - 8, 30));
-	text_layer_set_background_color(text_layer, GColorClear);
-	text_layer_set_font(text_layer, titleFont);
-	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-	text_layer_set_text(text_layer, text_connect_step6);
-	layer_add_child(step6_layer, text_layer_get_layer(text_layer));
+	step6_layer_text = text_layer_create(GRect(0, 10, bounds.size.w - 8, 30));
+	text_layer_set_background_color(step6_layer_text, GColorClear);
+	text_layer_set_font(step6_layer_text, titleFont);
+	text_layer_set_text_alignment(step6_layer_text, GTextAlignmentCenter);
+	text_layer_set_text(step6_layer_text, text_connect_step6);
+	layer_add_child(step6_layer, text_layer_get_layer(step6_layer_text));
 
-	text_layer = text_layer_create(GRect(8, 45, bounds.size.w - 20, bounds.size.h - 45));
-	text_layer_set_background_color(text_layer, GColorClear);
-	text_layer_set_font(text_layer, tinyFont);
-	text_layer_set_text_alignment(text_layer, GTextAlignmentLeft);
-	text_layer_set_text(text_layer, text_connect_step6_bottom);
-	layer_add_child(step6_layer, text_layer_get_layer(text_layer));
+	step6_layer_text_bottom = text_layer_create(GRect(8, 45, bounds.size.w - 20, bounds.size.h - 45));
+	text_layer_set_background_color(step6_layer_text_bottom, GColorClear);
+	text_layer_set_font(step6_layer_text_bottom, tinyFont);
+	text_layer_set_text_alignment(step6_layer_text_bottom, GTextAlignmentLeft);
+	text_layer_set_text(step6_layer_text_bottom, text_connect_step6_bottom);
+	layer_add_child(step6_layer, text_layer_get_layer(step6_layer_text_bottom));
 }
 
 static Layer *get_layer(int step) {
@@ -165,6 +174,7 @@ static void set_step(int nextStep) {
 		GRect to_rect = GRect(-bounds.size.w, 0, bounds.size.w, bounds.size.h);
 		out_animation = property_animation_create_layer_frame(current_layer, &from_rect, &to_rect);
 		animation_set_duration((Animation*) out_animation, 400);
+		animation_set_handlers((Animation*) out_animation, (AnimationHandlers) { .stopped = (AnimationStoppedHandler) animation_done }, NULL);
 		animation_schedule((Animation*) out_animation);
 	}
 	if (next_layer != NULL) {
@@ -172,6 +182,7 @@ static void set_step(int nextStep) {
 		GRect to_rect = GRect(0, 0, bounds.size.w, bounds.size.h);
 		in_animation = property_animation_create_layer_frame(next_layer, &from_rect, &to_rect);
 		animation_set_duration((Animation*) in_animation, 400);
+		animation_set_handlers((Animation*) in_animation, (AnimationHandlers) { .stopped = (AnimationStoppedHandler) animation_done }, NULL);
 		animation_schedule((Animation*) in_animation);
 	}
 	text_layer_set_text(navi_text_layer, (nextStep >= 5 ? text_finish : nextStep == 4 ? "" : text_next));
@@ -179,11 +190,6 @@ static void set_step(int nextStep) {
 }
 
 static void navigate_next() {
-	LOG("Navigate Connection Process");
-	char text[164];
-	snprintf(text, 128, "step: %d; token: %s", step, s_key_token);
-	LOG(text);
-	
 	/* close the process when we have a token and are after the success display */
 	if (strlen(s_key_token) > 0 && step == 5)
 		window_stack_pop(true);
@@ -236,27 +242,53 @@ void deinit_connect(Window *window) {
 	
 	destroy_property_animation(&out_animation);
 	destroy_property_animation(&in_animation);
+
+	text_layer_destroy(navi_text_layer);
+	layer_destroy(step1_layer);
+	text_layer_destroy(step1_layer_text);
+	layer_destroy(step2_layer);
+	text_layer_destroy(step2_layer_text);
+	text_layer_destroy(step2_layer_text_bottom);
+	layer_destroy(step3_layer);
+	text_layer_destroy(step3_layer_text);
+	layer_destroy(step4_layer);
+	text_layer_destroy(step4_layer_text);
+	layer_destroy(step5_layer);
+	text_layer_destroy(step5_layer_text);
+	text_layer_destroy(code_text_layer);
+	layer_destroy(step6_layer);
+	text_layer_destroy(step6_layer_text);
+	text_layer_destroy(step6_layer_text_bottom);
+
 	code_text_layer = NULL;
 }
 
 
 /* start the connection process */
 void connect_start() {
-	Window *connect_window = window_create();
-	window_set_click_config_provider(connect_window, (ClickConfigProvider) connect_config_provider);
-	window_set_fullscreen(connect_window, true);
-	window_set_window_handlers(connect_window, (WindowHandlers) {
-		.load = init_connect,
-		.unload = deinit_connect
-	});
+	step = 0;
+	if (connect_window == NULL) {
+		connect_window = window_create();
+		window_set_click_config_provider(connect_window, (ClickConfigProvider) connect_config_provider);
+		window_set_fullscreen(connect_window, true);
+		window_set_window_handlers(connect_window, (WindowHandlers) {
+			.load = init_connect,
+			.unload = deinit_connect
+		});
+	}
 	window_stack_push(connect_window, true);
 }
-
+/* destroy connect process resources */
+void connect_destroy() {
+	if (connect_window == NULL)
+		return;
+	window_destroy(connect_window);
+}
 
 /* update the connection state */
 void connect_update_state() {
 	if (code_text_layer == NULL) return;
-	
+
 	text_layer_set_text(code_text_layer, s_sensor_id);
 	
 	/* we got a keytoken so show the success page */

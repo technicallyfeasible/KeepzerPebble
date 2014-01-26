@@ -23,7 +23,6 @@ static void out_sent_handler(DictionaryIterator *sent, void *context) {
 }
 static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
 	// outgoing message failed
-	LOG("Sending message failed. Trying again.");
 	Tuple *type_tuple = dict_find(failed, MESSAGE_TYPE);
 	LOG(type_tuple->value->cstring);
 
@@ -39,7 +38,6 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 	// Check for fields you expect to receive
 	Tuple *type_tuple = dict_find(iter, MESSAGE_TYPE);
 
-	LOG("Received app message");
 	LOG(type_tuple->value->cstring);
 
 	// Received items
@@ -75,16 +73,13 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 		int result = token_tuple->value->uint8;
 		// if successful then remove the first log item and send the next one
 		// result: 0=cannot send, 1=success, 2=connect error, 3=bad item
-		char text[128];
-		snprintf(text, 128, "Result: %d", result);
-		LOG(text);
 		logPending = false;
 		if (result == 3 || result == 1)
 			logitem_remove(0);
 		if (result == 1 || result == 2)	// success or general error, try again
 			send_next_item();
 		if (result == 0) {				// unauthorized, clear token and force reauth
-			LOG("Connect error. Reset keytoken.");
+			LOG("Connect error");
 			set_keytoken("\0");
 		}
 	}
@@ -108,7 +103,9 @@ void init_messaging() {
 
 	app_message_open(inbound_size, outbound_size);
 }
-
+void deinit_messaging() {
+	app_message_deregister_callbacks();
+}
 
 void queue_item(int current_item) {
 	// append the item to the list of sending items
@@ -128,8 +125,6 @@ void send_next_item() {
 	logPending = true;
 	
 	LogItem *item = &s_log_items[0];
-
-	LOG("Sending item.");
 
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);

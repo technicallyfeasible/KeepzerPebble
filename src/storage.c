@@ -4,7 +4,7 @@
 #include "connect.h"
 
 char s_key_token[164] = "\0";
-char s_sensor_id[64];
+char s_sensor_id[32];
 ActivityItem s_activity_items[MAX_ACTIVITY_ITEMS];
 int s_active_item_count = 0;
 int current_item = 0;
@@ -97,7 +97,7 @@ void safestrcpy(char *dest, const char *src) {
 
 void logitem_append(int index, char* dateString) {
 	if (s_log_item_count >= MAX_ACTIVITY_ITEMS || index >= s_active_item_count) { 
-		LOG("Cannot append log item.");
+		LOG("Cannot append");
 		return;
 	}
 	strcpy(s_log_items[s_log_item_count].date, dateString);
