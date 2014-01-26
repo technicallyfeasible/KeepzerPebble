@@ -52,7 +52,11 @@ function sendItem(index, item, length) {
 function sendItems() {
 	if(!options || !options.items)
 		return;
-	
+	// send fake item if all were deleted
+	if (options.items.length == 0) {
+		sendItem(i, {"name":"", "dataType":"", "json":""}, 0);
+		return;
+	}
 	for(var i = 0; i < options.items.length; i++)
 		sendItem(i, options.items[i], options.items.length);
 }

@@ -85,16 +85,18 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 
 	// Received items
     if (strcmp(type_tuple->value->cstring, message_type_item) == 0) {
-		Tuple *item_tuple = dict_find(iter, MESSAGE_ITEM);
-		Tuple *name_tuple = dict_find(iter, MESSAGE_ITEM_NAME);
-		Tuple *type_tuple = dict_find(iter, MESSAGE_DATATYPE);
-		Tuple *json_tuple = dict_find(iter, MESSAGE_JSON);
 		Tuple *count_tuple = dict_find(iter, MESSAGE_ITEM_COUNT);
 		s_active_item_count = count_tuple->value->uint16;
-		char *name = name_tuple->value->cstring;
-		char *type = type_tuple->value->cstring;
-		char *json = json_tuple->value->cstring;
-		activity_set(item_tuple->value->uint16, name, type, json);
+		if (s_active_item_count > 0) {
+			Tuple *item_tuple = dict_find(iter, MESSAGE_ITEM);
+			Tuple *name_tuple = dict_find(iter, MESSAGE_ITEM_NAME);
+			Tuple *type_tuple = dict_find(iter, MESSAGE_DATATYPE);
+			Tuple *json_tuple = dict_find(iter, MESSAGE_JSON);
+			char *name = name_tuple->value->cstring;
+			char *type = type_tuple->value->cstring;
+			char *json = json_tuple->value->cstring;
+			activity_set(item_tuple->value->uint16, name, type, json);
+		}
 		store_config();
 		display_update_events();
     }
