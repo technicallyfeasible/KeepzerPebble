@@ -46,6 +46,14 @@ void store_keytoken() {
 void load_keytoken() {
 	persist_read_string(STORAGE_KEYTOKEN, s_key_token, sizeof(s_key_token));
 }
+/* Store the sensor id */
+void store_sensorid() {
+	persist_write_string(STORAGE_SENSORID, s_sensor_id);
+}
+/* Load the sensor id */
+void load_sensorid() {
+	persist_read_string(STORAGE_SENSORID, s_sensor_id, sizeof(s_sensor_id));
+}
 /* Store all log items in persistent storage */
 void store_log() {
 	persist_write_int(STORAGE_LOG_COUNT, s_log_item_count);
@@ -130,6 +138,7 @@ void set_keytoken(char *data) {
 
 void set_sensorid(char *data) {
 	strcpy(s_sensor_id, data);
+	store_sensorid();
 	display_update_state();
 	connect_update_state();
 }

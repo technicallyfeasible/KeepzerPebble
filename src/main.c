@@ -360,6 +360,7 @@ static void init(Window *window) {
 
 	init_messaging();
 	load_keytoken();
+	load_sensorid();
 	load_config();
 	load_log();
 
@@ -372,8 +373,10 @@ static void init(Window *window) {
 		state = 2;
 		sendKeyToken();
 	}
-	// send pending items
-	//send_next_item();
+	// check if we have a sensorid
+	if (strlen(s_sensor_id) > 0)
+		sendSensorId();
+		
 	if (s_active_item_count == 0) {
 		activity_append("cup of coffee", "keepzer.calendar.event", "{\"event\":\"cup of coffee\"}");
 		activity_append("snack", "keepzer.calendar.event", "{\"event\":\"snack\"}");
@@ -420,7 +423,7 @@ int main(void) {
 	titleFont = fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
 	subtitleFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 	statusFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-	smallFont = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
+	smallFont = fonts_get_system_font(FONT_KEY_GOTHIC_28 /*FONT_KEY_ROBOTO_CONDENSED_21*/);
 	tinyFont = fonts_get_system_font(FONT_KEY_GOTHIC_18);
 	
 	/* create main window */

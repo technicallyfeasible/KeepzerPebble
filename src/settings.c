@@ -17,8 +17,7 @@ static void menu_select_callback(int index, void *ctx) {
 		case MENU_HELP:
 			break;
 		case MENU_DISCONNECT:
-			s_key_token[0] = 0;
-			store_keytoken();
+			set_keytoken("\0");
 			sendKeyToken();
 			display_update_state();
 			// leave the options menu

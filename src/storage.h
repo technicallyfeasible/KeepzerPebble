@@ -14,9 +14,10 @@
 #define MAX_LOG_ITEMS (20)
 
 #define STORAGE_ITEM_COUNT 0
+#define STORAGE_LOG_COUNT 1
 #define STORAGE_ITEM_CURRENT 2
 #define STORAGE_KEYTOKEN 3
-#define STORAGE_LOG_COUNT 4
+#define STORAGE_SENSORID 4
 #define STORAGE_ITEMS 20
 #define STORAGE_LOGS 100
 
@@ -44,10 +45,10 @@ extern int s_log_item_count;
 void store_config();
 /* Load all activities in persistent storage */
 void load_config();
-/* Store the keytoken */
-void store_keytoken();
 /* Load the keytoken */
 void load_keytoken();
+/* Load the sensor id */
+void load_sensorid();
 /* Load all log items from persistent storage */
 void load_log();
 

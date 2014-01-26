@@ -12,7 +12,6 @@ static const char *message_type_log_result = "log_result";
 static const char *message_type_item = "item";
 static const char *message_type_sensorid = "sensorid";
 static const char *message_type_keytoken = "keytoken";
-static const char *message_type_account_token = "account_token";
 static const char *message_type_connect = "connect";
 static const char *message_type_cancel_connect = "cancel_connect";
 
@@ -28,6 +27,8 @@ static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reas
 
 	if (strcmp(type_tuple->value->cstring, message_type_keytoken) == 0)
 		sendKeyToken();
+	else if (strcmp(type_tuple->value->cstring, message_type_sensorid) == 0)
+		sendSensorId();
 	else if (strcmp(type_tuple->value->cstring, message_type_log) == 0) {
 		logPending = false;
 		send_next_item();
@@ -57,8 +58,8 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
     }
     else if (strcmp(type_tuple->value->cstring, message_type_sensorid) == 0) {
 		Tuple *token_tuple = dict_find(iter, MESSAGE_SENSORID);
-		LOG(token_tuple->value->cstring);
 		set_sensorid(token_tuple->value->cstring);
+		LOG(token_tuple->value->cstring);
 	}
     else if (strcmp(type_tuple->value->cstring, message_type_keytoken) == 0) {
 		Tuple *token_tuple = dict_find(iter, MESSAGE_KEYTOKEN);
@@ -136,14 +137,6 @@ void send_next_item() {
 	app_message_outbox_send();
 }
 
-/* get the account token of the current user */
-void get_account_token() {
-	DictionaryIterator *iter;
-	app_message_outbox_begin(&iter);
-	dict_write_cstring(iter, MESSAGE_TYPE, message_type_account_token);
-	app_message_outbox_send();
-}
-
 /* cancel the current connection attempt */
 void cancel_connect() {
 	DictionaryIterator *iter;
@@ -165,5 +158,14 @@ void sendKeyToken() {
 	app_message_outbox_begin(&iter);
 	dict_write_cstring(iter, MESSAGE_TYPE, message_type_keytoken);
 	dict_write_cstring(iter, MESSAGE_KEYTOKEN, s_key_token);
+	dict_write_cstring(iter, MESSAGE_SENSORID, s_sensor_id);
+	app_message_outbox_send();
+}
+/* send sensor id to configuration side so it's available for logging */
+void sendSensorId() {
+	DictionaryIterator *iter;
+	app_message_outbox_begin(&iter);
+	dict_write_cstring(iter, MESSAGE_TYPE, message_type_sensorid);
+	dict_write_cstring(iter, MESSAGE_SENSORID, s_sensor_id);
 	app_message_outbox_send();
 }

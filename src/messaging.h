@@ -31,5 +31,7 @@ void cancel_connect();
 void connect();
 /* send keytoken to configuration side so it's available for logging */
 void sendKeyToken();
+/* send sensor id to configuration side so it's available for logging */
+void sendSensorId();
 
 #endif

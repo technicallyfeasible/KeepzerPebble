@@ -32,6 +32,7 @@ static char *text_connect_step2_bottom = "keepzer.com";
 static char *text_connect_step3 = "Click:\nConnect more trackers";
 static char *text_connect_step4 = "Click:\nKeepzer for Pebble";
 static char *text_connect_step5 = "Enter:";
+static char *text_connect_step5_code = "Loading code...";
 static char *text_connect_step6 = "Success";
 static char *text_connect_step6_bottom = "Your watch is now connected. Create your own events in the config page on your phone.";
 
@@ -119,7 +120,7 @@ static void create_step5(Window *window) {
 	text_layer_set_background_color(code_text_layer, GColorClear);
 	text_layer_set_font(code_text_layer, smallFont);
 	text_layer_set_text_alignment(code_text_layer, GTextAlignmentCenter);
-	text_layer_set_text(code_text_layer, "Loading code...");
+	text_layer_set_text(code_text_layer, text_connect_step5_code);
 	layer_add_child(step5_layer, text_layer_get_layer(code_text_layer));
 }
 
@@ -166,9 +167,6 @@ static void set_step(int nextStep) {
 	Layer *current_layer = get_layer(step);
 	Layer *next_layer = get_layer(nextStep);
 
-	//destroy_property_animation(&out_animation);
-	//destroy_property_animation(&in_animation);
-
 	if (current_layer != NULL) {
 		GRect from_rect = GRect(0, 0, bounds.size.w, bounds.size.h);
 		GRect to_rect = GRect(-bounds.size.w, 0, bounds.size.w, bounds.size.h);
@@ -191,13 +189,17 @@ static void set_step(int nextStep) {
 
 static void navigate_next() {
 	/* close the process when we have a token and are after the success display */
-	if (strlen(s_key_token) > 0 && step == 5)
+	if (strlen(s_key_token) > 0 && step == 5) {
 		window_stack_pop(true);
+		return;
+	}
 	
 	/* while waiting for connection cannot move to another step */
 	if (step > 4 || (step == 4 && strlen(s_key_token) == 0)) return;
-	if (step == 3)
+	if (step == 3) {
 		connect();
+		connect_update_state();
+	}
 	set_step(step + 1);
 }
 

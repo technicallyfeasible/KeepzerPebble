@@ -8,13 +8,14 @@ var options = {
 	"items": []			// items available for the user
 };
 var keytoken = "";		// token to use for pushing items into the store
+var sensorId = "";		// sensor id for this pebble watch
 
 var messages = [];
 var isSending = false;
 
 	 
 function log(text) {
-	console.log(text);
+	//console.log(text);
 }
 
 function appMessageAck(e) {
@@ -56,14 +57,6 @@ function sendItems() {
 		sendItem(i, options.items[i], options.items.length);
 }
 
-function sendAccountToken(token) {
-	var message = {
-		"type": "account_token",
-		"accountToken": token
-	};
-	addMessage(message);
-}
-
 function sendSensorId(sensorId) {
 	var message = {
 		"type": "sensorid",
@@ -85,45 +78,6 @@ function sendLogResult(result) {
 		"result": result
 	};
 	addMessage(message);
-}
-
-function hex2byte(c)
-{
-	var charCode = c - 48;
-	if (charCode > 15)
-		charCode -= 7;
-	if (charCode > 15)
-		charCode -= 32;
-	if (charCode < 0 || charCode > 15)
-		return 0;
-	return charCode;
-}
-
-function hex2base64 (data) {
-  var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-  var o1, o2, o3, h1, h2, i = 0, ac = 0, enc = "", tmp_arr = [];
-
-  if (!data) {
-    return data;
-  }
-
-  do { // pack three quartets into two hexets
-    o1 = hex2byte(i < data.length ? data.charCodeAt(i++) : 48);
-    o2 = hex2byte(i < data.length ? data.charCodeAt(i++) : 48);
-    o3 = hex2byte(i < data.length ? data.charCodeAt(i++) : 48);
-
-    h1 = (o1 << 2) | (o2 >> 2);
-    h2 = ((o2 & 0x03) << 4) | o3;
-
-    // use hexets to index into b64, and append result to encoded string
-    tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2);
-  } while (i < data.length);
-
-  enc = tmp_arr.join('');
-
-  var r = (data.length % 3);
-
-  return (r == 1 ? enc.slice(0, -1) : enc) + '==='.slice(0, r);
 }
 
 function connectKeepzer(sensorId) {
@@ -207,6 +161,33 @@ function storeItemKeepzer(itemDate, itemType, itemJson, done) {
 	req.send(data);
 }
 
+function getSensorIdKeepzer(done) {
+	if (connecting)
+		return;
+
+	log("Getting sensor id");
+
+	var req = new XMLHttpRequest();
+	req.open('GET', sensorUri + '/discover/uniqueid?appId=' + appId + '&length=6', true);
+	req.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+	req.onload = function(e) {
+		if (req.readyState != 4) return;
+		
+		if (req.status == 200) {
+			var response = JSON.parse(req.responseText);
+			if (!response.isError && response.sensorId) {
+				sensorId = response.sensorId;
+				window.localStorage.setItem('sensorid', keytoken);
+			}
+		} else {
+			log("UniqueId error: " + req.status);
+		}
+		log("UniqueId: " + sensorId);
+		if (done) done(sensorId);
+	};
+	req.send(null);
+}
+
 
 Pebble.addEventListener("ready", function() {
     initialised = true;
@@ -228,9 +209,14 @@ Pebble.addEventListener("webviewclosed", function(e) {
 		options = JSON.parse(stringOptions);
 		log("Storing options: " + stringOptions);
 		window.localStorage.setItem('options', stringOptions);
+		// get keytoken and send to watch if it exists
 	    keytoken = window.localStorage.getItem('keytoken');
 		if (keytoken)
 			sendKeyToken(keytoken);
+		// get sensor id and send to watch if it exists
+	    sensorId = window.localStorage.getItem('sensorid');
+		if (sensorId)
+			sendSensorId(sensorId);
 		sendItems();
     } else {
 		log("No options received");
@@ -243,15 +229,27 @@ Pebble.addEventListener("appmessage", function(e) {
 		case "keytoken":
 			// the watch sends the current keytoken for item logging
 			log("Received token: " + e.payload.keyToken);
+			log("Received sensorId: " + e.payload.sensorId);
 			keytoken = e.payload.keyToken;
 			window.localStorage.setItem('keytoken', keytoken);
+			sensorId = e.payload.sensorId;
+			window.localStorage.setItem('sensorid', sensorId);
+			break;
+		case "sensorid":
+			// the watch sends the current sensorid for item logging
+			log("Received sensorId: " + e.payload.sensorId);
+			sensorId = e.payload.sensorId;
+			window.localStorage.setItem('sensorid', sensorId);
 			break;
 		case "connect":
-			var token = Pebble.getAccountToken();
-			log("Account token: " + token);
-			var sensorId = hex2base64(token);
-			sendSensorId(sensorId);
-			connectKeepzer(sensorId);
+			if(!sensorId) {
+				getSensorIdKeepzer(function(sensorId) {
+					sendSensorId(sensorId);
+					connectKeepzer(sensorId);
+				});
+			}
+			else
+				connectKeepzer(sensorId);
 			break;
 		case "cancel_connect":
 			cancelConnect();
