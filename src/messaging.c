@@ -4,8 +4,12 @@
 #include "display.h"
 #include "connect.h"
 
+#define MAX_MESSAGES 2
+#define MAX_VALUES 4
+#define MAX_MESSAGE_SIZE 512
+
 const uint32_t inbound_size = 256;
-const uint32_t outbound_size = 512;
+const uint32_t outbound_size = MAX_MESSAGE_SIZE;
 
 static const char *message_type_log = "log";
 static const char *message_type_log_result = "log_result";
@@ -15,24 +19,62 @@ static const char *message_type_keytoken = "keytoken";
 static const char *message_type_connect = "connect";
 static const char *message_type_cancel_connect = "cancel_connect";
 
-bool logPending = false;
+static bool logPending = false;
+
+typedef struct {
+	Tuplet data[MAX_VALUES];
+	int data_count;
+} Message;
+static Message message_queue[MAX_MESSAGES];
+static int message_queue_count = 0;
+static bool messagePending = false;
+
+
+/* remove the first message because it was sent */
+static void remove_current_message() {
+	if (message_queue_count <= 0)
+		return;
+	for (int i = 1; i < message_queue_count; i++)
+		memcpy(&message_queue[i - 1], &message_queue[i], sizeof(Message));
+	message_queue_count--;
+	LOG("message removed");
+}
+/* send the first message in the queue */
+static void send_current_message() {
+	if (messagePending || message_queue_count <= 0)
+		return;
+	// if there is no connection then don't even try
+	if (!bluetooth_connection_service_peek())
+		return;
+
+	messagePending = true;
+	
+	Message* message = &message_queue[0];
+	
+	uint32_t destSize = MAX_MESSAGE_SIZE;
+	DictionaryIterator *iter;
+	app_message_outbox_begin(&iter);
+	for (int i = 0; i < message->data_count; i++)
+		dict_write_tuplet(iter, &message->data[i]);
+	app_message_outbox_send();
+	LOG("message sent");
+}
 
 static void out_sent_handler(DictionaryIterator *sent, void *context) {
 	// outgoing message was delivered
+	messagePending = false;
+	remove_current_message();
+	send_current_message();
 }
 static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
 	// outgoing message failed
+	messagePending = false;
+	
+	LOG("send failed");
 	Tuple *type_tuple = dict_find(failed, MESSAGE_TYPE);
 	LOG(type_tuple->value->cstring);
 
-	if (strcmp(type_tuple->value->cstring, message_type_keytoken) == 0)
-		sendKeyToken();
-	else if (strcmp(type_tuple->value->cstring, message_type_sensorid) == 0)
-		sendSensorId();
-	else if (strcmp(type_tuple->value->cstring, message_type_log) == 0) {
-		logPending = false;
-		send_next_item();
-	}
+	send_current_message();
 }
 static void in_received_handler(DictionaryIterator *iter, void *context) {
     // incoming message received
@@ -85,10 +127,13 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 		}
 	}
 }
-static void in_dropped_handler(AppMessageResult reason, void *context) {
-	// incoming message dropped
-}
 
+static void connection_state_handler(bool connected) {
+	if (!connected) return;
+	
+	send_next_item();
+	send_current_message();
+}
 
 void init_messaging() {
 	// Reduce the sniff interval for more responsive messaging at the expense of
@@ -98,14 +143,34 @@ void init_messaging() {
 	app_comm_set_sniff_interval(SNIFF_INTERVAL_REDUCED);
 
 	app_message_register_inbox_received(in_received_handler);
-	app_message_register_inbox_dropped(in_dropped_handler);
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);
 
 	app_message_open(inbound_size, outbound_size);
+	
+	// subscribe to connection state changes
+	bluetooth_connection_service_subscribe(connection_state_handler);
 }
 void deinit_messaging() {
 	app_message_deregister_callbacks();
+	bluetooth_connection_service_unsubscribe();
+}
+
+/* queue the next message to be sent */
+static void queue_message(Message **message) {
+	// just drop the message if the queue is full
+	if (message_queue_count >= MAX_MESSAGES)
+		return;
+	*message = &message_queue[message_queue_count];
+	message_queue[message_queue_count].data_count = 0;
+	message_queue_count++;
+	LOG("message queued");
+}
+/* add string data to the message */
+static void message_add_cstring(Message *message, int key, const char* data) {
+	Tuplet token = ((Tuplet) { .type = TUPLE_CSTRING, .key = key, .cstring = { .data = data, .length = data ? strlen(data) + 1 : 0 }});
+	memcpy(&message->data[message->data_count], &token, sizeof(Tuplet));
+	message->data_count++;
 }
 
 void queue_item(int current_item) {
@@ -127,45 +192,43 @@ void send_next_item() {
 	
 	LogItem *item = &s_log_items[0];
 
-	DictionaryIterator *iter;
-	app_message_outbox_begin(&iter);
-	dict_write_cstring(iter, MESSAGE_TYPE, message_type_log);
-	dict_write_int16(iter, MESSAGE_ITEM, current_item);
-	dict_write_cstring(iter, MESSAGE_DATE, item->date);
-	dict_write_cstring(iter, MESSAGE_DATATYPE, item->type);
-	dict_write_cstring(iter, MESSAGE_JSON, item->json);
-	app_message_outbox_send();
+	Message *message = NULL;
+	queue_message(&message);
+	message_add_cstring(message, MESSAGE_TYPE, message_type_log);
+	message_add_cstring(message, MESSAGE_DATE, item->date);
+	message_add_cstring(message, MESSAGE_DATATYPE, item->type);
+	message_add_cstring(message, MESSAGE_JSON, item->json);
+	send_current_message();
 }
 
 /* cancel the current connection attempt */
 void cancel_connect() {
-	DictionaryIterator *iter;
-	app_message_outbox_begin(&iter);
-	dict_write_cstring(iter, MESSAGE_TYPE, message_type_cancel_connect);
-	app_message_outbox_send();
+	Message *message = NULL;
+	queue_message(&message);
+	message_add_cstring(message, MESSAGE_TYPE, message_type_cancel_connect);
+	send_current_message();
 }
 /* start a new connection attempt */
 void connect() {
-	DictionaryIterator *iter;
-	app_message_outbox_begin(&iter);
-	dict_write_cstring(iter, MESSAGE_TYPE, message_type_connect);
-	app_message_outbox_send();
+	Message *message = NULL;
+	queue_message(&message);
+	message_add_cstring(message, MESSAGE_TYPE, message_type_connect);
+	send_current_message();
 }
 
 /* send keytoken to configuration side so it's available for logging */
 void sendKeyToken() {
-	DictionaryIterator *iter;
-	app_message_outbox_begin(&iter);
-	dict_write_cstring(iter, MESSAGE_TYPE, message_type_keytoken);
-	dict_write_cstring(iter, MESSAGE_KEYTOKEN, s_key_token);
-	dict_write_cstring(iter, MESSAGE_SENSORID, s_sensor_id);
-	app_message_outbox_send();
+	Message *message = NULL;
+	queue_message(&message);
+	message_add_cstring(message, MESSAGE_TYPE, message_type_keytoken);
+	message_add_cstring(message, MESSAGE_KEYTOKEN, s_key_token);
+	send_current_message();
 }
 /* send sensor id to configuration side so it's available for logging */
 void sendSensorId() {
-	DictionaryIterator *iter;
-	app_message_outbox_begin(&iter);
-	dict_write_cstring(iter, MESSAGE_TYPE, message_type_sensorid);
-	dict_write_cstring(iter, MESSAGE_SENSORID, s_sensor_id);
-	app_message_outbox_send();
+	Message *message = NULL;
+	queue_message(&message);
+	message_add_cstring(message, MESSAGE_TYPE, message_type_sensorid);
+	message_add_cstring(message, MESSAGE_SENSORID, s_sensor_id);
+	send_current_message();
 }

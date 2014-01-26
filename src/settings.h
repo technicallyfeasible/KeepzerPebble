@@ -11,7 +11,4 @@ void settings_start();
 /* destroy settings resource */
 void settings_destroy();
 
-/* update the connection state */
-void settings_update_state();
-
 #endif

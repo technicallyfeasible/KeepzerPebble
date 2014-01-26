@@ -4,7 +4,7 @@
 #include "storage.h"
 #include "messaging.h"
 
-Window *connect_window = NULL;
+static Window *connect_window = NULL;
 static TextLayer *navi_text_layer = NULL;
 static Layer *step1_layer = NULL;
 static TextLayer *step1_layer_text = NULL;
@@ -217,14 +217,14 @@ static void connect_click_handler(ClickRecognizerRef recognizer, Window *window)
 }
 
 /* configure click handlers */
-void connect_config_provider(Window *window) {
-	window_single_click_subscribe(BUTTON_ID_UP, (ClickHandler) connect_click_handler);
+static void connect_config_provider(Window *window) {
+	//window_single_click_subscribe(BUTTON_ID_UP, (ClickHandler) connect_click_handler);
 	window_single_click_subscribe(BUTTON_ID_SELECT, (ClickHandler) connect_click_handler);
-	window_single_click_subscribe(BUTTON_ID_DOWN, (ClickHandler) connect_click_handler);
+	//window_single_click_subscribe(BUTTON_ID_DOWN, (ClickHandler) connect_click_handler);
 }
 
 /* initialize the settings */
-void init_connect(Window *window) {
+static void init_connect(Window *window) {
 	step = 0;
 	create_step1(window);
 	create_step2(window);
@@ -236,7 +236,7 @@ void init_connect(Window *window) {
 }
 
 /* deinitialize the settings */
-void deinit_connect(Window *window) {
+static void deinit_connect(Window *window) {
 	// if we have a keytoken we don't have to cancel anymore
 	if (strlen(s_key_token) == 0)
 		cancel_connect();

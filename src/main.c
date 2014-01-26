@@ -376,7 +376,9 @@ static void init(Window *window) {
 	// check if we have a sensorid
 	if (strlen(s_sensor_id) > 0)
 		sendSensorId();
-		
+
+	send_next_item();
+
 	if (s_active_item_count == 0) {
 		activity_append("cup of coffee", "keepzer.calendar.event", "{\"event\":\"cup of coffee\"}");
 		activity_append("snack", "keepzer.calendar.event", "{\"event\":\"snack\"}");
@@ -392,7 +394,6 @@ static void init(Window *window) {
 }
 
 static void deinit(Window *window) {
-	store_config();
 	destroy_property_animation(&prop_animation);
 	destroy_property_animation(&state_layer_animation);
 

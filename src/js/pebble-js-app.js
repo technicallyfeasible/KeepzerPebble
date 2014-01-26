@@ -232,8 +232,8 @@ Pebble.addEventListener("appmessage", function(e) {
 			log("Received sensorId: " + e.payload.sensorId);
 			keytoken = e.payload.keyToken;
 			window.localStorage.setItem('keytoken', keytoken);
-			sensorId = e.payload.sensorId;
-			window.localStorage.setItem('sensorid', sensorId);
+			//sensorId = e.payload.sensorId;
+			//window.localStorage.setItem('sensorid', sensorId);
 			break;
 		case "sensorid":
 			// the watch sends the current sensorid for item logging
