@@ -14,32 +14,39 @@ LogItem s_log_items[MAX_LOG_ITEMS];
 int s_log_item_count;
 
 /* Store all activities in persistent storage */
-void store_config() {
+void store_config(bool currentOnly, int index) {
 	persist_write_int(STORAGE_ITEM_CURRENT, current_item);
+	if (currentOnly) return;
 	persist_write_int(STORAGE_ITEM_COUNT, s_active_item_count);
 	// each item has to be written separately because maximum value size is 256 bytes
-	for(int i = 0; i < s_active_item_count; i++) {
-		persist_write_data(STORAGE_ITEMS + i, &s_activity_items[i], sizeof(ActivityItem));
+	if(index >= 0 && index < s_active_item_count)
+		persist_write_data(STORAGE_ITEMS + index, &s_activity_items[index], sizeof(ActivityItem));
+	else {
+		for(int i = 0; i < s_active_item_count; i++)
+			persist_write_data(STORAGE_ITEMS + i, &s_activity_items[i], sizeof(ActivityItem));
 	}
 }
+
 /* Load all activities in persistent storage */
 void load_config() {
 	s_active_item_count = persist_read_int(STORAGE_ITEM_COUNT);
 	current_item = persist_read_int(STORAGE_ITEM_CURRENT);
+    if (s_active_item_count > MAX_ACTIVITY_ITEMS)
+	  s_active_item_count = MAX_ACTIVITY_ITEMS;
 	if (current_item >= s_active_item_count)
 		current_item = s_active_item_count;
 	if (s_active_item_count == 0)
 		return;
-    if (s_active_item_count > MAX_ACTIVITY_ITEMS)
-	  s_active_item_count = MAX_ACTIVITY_ITEMS;
 
 	// read each item separately
+	memset(s_activity_items, 0, sizeof(ActivityItem) * MAX_ACTIVITY_ITEMS);
 	for(int i = 0; i < s_active_item_count; i++) {
 		persist_read_data(STORAGE_ITEMS + i, &s_activity_items[i], sizeof(ActivityItem));
 	}
 }
 /* Store the keytoken */
 void store_keytoken() {
+	s_key_token[sizeof(s_key_token) - 1] = 0;
 	persist_write_string(STORAGE_KEYTOKEN, s_key_token);
 }
 /* Load the keytoken */
@@ -48,6 +55,7 @@ void load_keytoken() {
 }
 /* Store the sensor id */
 void store_sensorid() {
+	s_sensor_id[sizeof(s_sensor_id) - 1] = 0;
 	persist_write_string(STORAGE_SENSORID, s_sensor_id);
 }
 /* Load the sensor id */
@@ -68,6 +76,7 @@ void load_log() {
     if (s_log_item_count > MAX_LOG_ITEMS)
 	  s_log_item_count = MAX_LOG_ITEMS;
 	// load log items separately
+	memset(s_log_items, 0, sizeof(LogItem) * MAX_LOG_ITEMS);
 	for(int i = 0; i < s_log_item_count; i++) {
 		persist_read_data(STORAGE_LOGS + i, &s_log_items[i], sizeof(LogItem));
 	}

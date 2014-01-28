@@ -6,12 +6,12 @@
 #ifndef __KEEPZER_STORAGE__
 #define __KEEPZER_STORAGE__
 
-#define MAX_ACTIVITY_ITEMS (20)
+#define MAX_ACTIVITY_ITEMS (10)
 #define MAX_ITEM_TEXT_LENGTH (32)
 #define MAX_ITEM_DATE_LENGTH (24)
 #define MAX_ITEM_TYPE_LENGTH (64)
 #define MAX_ITEM_JSON_LENGTH (128)
-#define MAX_LOG_ITEMS (20)
+#define MAX_LOG_ITEMS (8)
 
 #define STORAGE_ITEM_COUNT 0
 #define STORAGE_LOG_COUNT 1
@@ -42,7 +42,7 @@ extern LogItem s_log_items[MAX_LOG_ITEMS];
 extern int s_log_item_count;
 
 /* Store all activities in persistent storage */
-void store_config();
+void store_config(bool currentOnly, int index);
 /* Load all activities in persistent storage */
 void load_config();
 /* Load the keytoken */

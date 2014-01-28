@@ -357,14 +357,12 @@ static void init(Window *window) {
 	Layer *window_layer = window_get_root_layer(window);
 	// Get the bounds of the window for sizing the text layer
 	bounds = layer_get_bounds(window_layer);
-
+	load_resources();
 	init_messaging();
 	load_keytoken();
 	load_sensorid();
 	load_config();
 	load_log();
-
-	load_resources();
 
 	// check if we have a keytoken, if not then show the connection screen
 	if (strlen(s_key_token) == 0)
@@ -394,7 +392,7 @@ static void init(Window *window) {
 }
 
 static void deinit(Window *window) {
-	store_config();
+	store_config(true, -1);
 	destroy_property_animation(&prop_animation);
 	destroy_property_animation(&state_layer_animation);
 

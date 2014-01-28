@@ -211,6 +211,16 @@ Pebble.addEventListener("webviewclosed", function(e) {
 		log("Options received: " + e.response);
 		var stringOptions = decodeURIComponent(e.response).replace(/[+]/g, ' ');
 		options = JSON.parse(stringOptions);
+		// make sure all string sizes are safe
+		if (!options.items) options.items = [];
+		for (var i = 0; i < options.items.length; i++) {
+			var item = options.items[i];
+			if (item.name && item.name.length > 31) item.name = item.name.substring(0, 31);
+			if (item.dataType && item.dataType.length > 63) item.dataType = item.dataType.substring(0, 63);
+			if (item.jsonData && item.jsonData.length > 127) item.jsonData = item.jsonData.substring(0, 127);
+		}
+		stringOptions = JSON.stringify(options);
+		// store options
 		log("Storing options: " + stringOptions);
 		window.localStorage.setItem('options', stringOptions);
 		// get keytoken and send to watch if it exists
