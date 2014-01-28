@@ -394,6 +394,7 @@ static void init(Window *window) {
 }
 
 static void deinit(Window *window) {
+	store_config();
 	destroy_property_animation(&prop_animation);
 	destroy_property_animation(&state_layer_animation);
 

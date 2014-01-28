@@ -1,5 +1,5 @@
-var configUri = "http://192.168.1.164:61722/other/pebble";
-var sensorUri = "http://192.168.1.164:61722/sensors/v1";
+var configUri = "http://test.keepzer.com/other/pebble";
+var sensorUri = "http://test.keepzer.com/sensors/v1";
 var appId = "a1b962c3-ce24-45be-9ee4-093692cbef79";
 
 var initialised = false;
