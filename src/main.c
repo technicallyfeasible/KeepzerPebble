@@ -40,7 +40,7 @@ static PropertyAnimation *prop_animation;
 
 static Layer *state_layer = NULL;
 static TextLayer *state_text_layer_top = NULL;
-static TextLayer *state_text_layer_bottom = NULL;
+//static TextLayer *state_text_layer_bottom = NULL;
 static PropertyAnimation *state_layer_animation;
 
 GBitmap *arrow_up_image, *arrow_down_image, *logo_image, *icon_info, *icon_disconnect;
@@ -260,32 +260,33 @@ static void create_navi(Window *window) {
 }
 
 static void state_layer_update_callback(Layer *me, GContext* ctx) {
-	if (state_text_layer_top == NULL || state_text_layer_bottom == NULL || lastState == state)
+	if (state_text_layer_top == NULL || /*state_text_layer_bottom == NULL ||*/ lastState == state)
 		return;
 
-	char *topText = NULL, *bottomText = NULL;
+	char *topText = NULL;
+	//, *bottomText = NULL;
 	switch(state) {
 		/* disconnected */
 		case 0:
 			topText = text_start_title;
-			bottomText = text_start_subtitle;
+			//bottomText = text_start_subtitle;
 			break;
 		/* connecting */
 		case 1:
 			topText = text_start_options;
-			bottomText = empty_text;
+			//bottomText = empty_text;
 			break;
 		/* connected */
 		case 2:
 			topText = text_start_options;
-			bottomText = empty_text;
+			//bottomText = empty_text;
 			break;
 	}
 	// resize title layer to center
 	GSize size = graphics_text_layout_get_content_size(topText, titleFont, GRect(2, 0, bounds.size.w - 4, bounds.size.h), GTextOverflowModeWordWrap, GTextAlignmentCenter);
 	layer_set_frame(text_layer_get_layer(state_text_layer_top), GRect(2, (bounds.size.h - size.h) / 2 - 2, bounds.size.w - 4, size.h));
 	text_layer_set_text(state_text_layer_top, topText);
-	text_layer_set_text(state_text_layer_bottom, bottomText);
+	//text_layer_set_text(state_text_layer_bottom, bottomText);
 	
 	lastState = state;
 }
@@ -304,12 +305,12 @@ static void create_state_layer(Window *window) {
 	//text_layer_set_text(state_text_layer_top, text_start_title);
 	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_top));
 
-	state_text_layer_bottom = text_layer_create(GRect(2, bounds.size.h - 40, bounds.size.w - 4, 40));
+	/*state_text_layer_bottom = text_layer_create(GRect(2, bounds.size.h - 40, bounds.size.w - 4, 40));
 	text_layer_set_background_color(state_text_layer_bottom, GColorClear);
 	text_layer_set_font(state_text_layer_bottom, subtitleFont);
 	text_layer_set_text_alignment(state_text_layer_bottom, GTextAlignmentCenter);
 	//text_layer_set_text(state_text_layer_bottom, text_start_subtitle);
-	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_bottom));
+	layer_add_child(state_layer, text_layer_get_layer(state_text_layer_bottom));*/
 }
 static void add_event_layer(GFont font, int itemIndex, int posIndex) {
 	TextLayer *text_layer = text_layer_create(GRect(2, posIndex * bounds.size.h, bounds.size.w - 26, bounds.size.h));
@@ -405,7 +406,7 @@ static void deinit(Window *window) {
 	text_layer_destroy(notification_text_layer);
 	layer_destroy(state_layer);
 	text_layer_destroy(state_text_layer_top);
-	text_layer_destroy(state_text_layer_bottom);
+	//text_layer_destroy(state_text_layer_bottom);
 	state_layer = NULL;
 	
 	connect_destroy();
@@ -429,7 +430,7 @@ int main(void) {
 	/* create main window */
 	window = window_create();
 	window_set_click_config_provider(window, (ClickConfigProvider) config_provider);
-	window_set_fullscreen(window, true);
+	//window_set_fullscreen(window, true);
 	window_set_window_handlers(window, (WindowHandlers) {
 		.load = init,
 		.unload = deinit

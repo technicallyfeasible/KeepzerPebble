@@ -38,7 +38,7 @@ static void create_menu(Window *window) {
 		.icon = icon_disconnect
 	};
 	sections_root[0] = (SimpleMenuSection) {
-		.title = "Options",
+		//.title = "Options",
 		.num_items = 2,
 		.items = menu_items_root,
 	};
@@ -61,7 +61,7 @@ static void deinit_settings(Window *window) {
 void settings_start() {
 	if (settings_window == NULL) {
 		settings_window = window_create();
-		window_set_fullscreen(settings_window, true);
+		//window_set_fullscreen(settings_window, true);
 		window_set_window_handlers(settings_window, (WindowHandlers) {
 			.load = init_settings,
 			.unload = deinit_settings
