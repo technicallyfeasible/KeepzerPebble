@@ -12,7 +12,7 @@
 extern GRect bounds;
 
 extern GBitmap *arrow_up_image, *arrow_down_image, *logo_image, *icon_info, *icon_disconnect;
-extern GFont symbolFont, titleFont, subtitleFont, eventsFont, statusFont, smallFont, tinyFont;
+extern GFont symbolFont, titleFont, subtitleFont, eventsFont, statusFont, smallFont, tinyFont, codeFont;
 
 void destroy_property_animation(PropertyAnimation **animation);
 void animation_done(struct Animation *animation, bool finished, void *context);

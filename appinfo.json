@@ -11,7 +11,8 @@
         "date": 30,
         "sensorId": 20,
         "itemCount": 12,
-        "itemName": 11
+        "itemName": 11,
+        "battery": 33
     },
     "longName": "Keepzer for Pebble",
     "versionCode": 1,

@@ -118,7 +118,7 @@ static void create_step5(Window *window) {
 
 	code_text_layer = text_layer_create(GRect(0, bounds.size.h - 65, bounds.size.w - 8, 65));
 	text_layer_set_background_color(code_text_layer, GColorClear);
-	text_layer_set_font(code_text_layer, smallFont);
+	text_layer_set_font(code_text_layer, codeFont);
 	text_layer_set_text_alignment(code_text_layer, GTextAlignmentCenter);
 	text_layer_set_text(code_text_layer, text_connect_step5_code);
 	layer_add_child(step5_layer, text_layer_get_layer(code_text_layer));

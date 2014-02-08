@@ -6,7 +6,7 @@
 #ifndef __KEEPZER_STORAGE__
 #define __KEEPZER_STORAGE__
 
-#define MAX_ACTIVITY_ITEMS (10)
+#define MAX_ACTIVITY_ITEMS (12)
 #define MAX_ITEM_TEXT_LENGTH (32)
 #define MAX_ITEM_DATE_LENGTH (24)
 #define MAX_ITEM_TYPE_LENGTH (64)
@@ -18,11 +18,14 @@
 #define STORAGE_ITEM_CURRENT 2
 #define STORAGE_KEYTOKEN 3
 #define STORAGE_SENSORID 4
+#define STORAGE_BATTERY 5
 #define STORAGE_ITEMS 20
 #define STORAGE_LOGS 100
 
 extern char s_key_token[164];
 extern char s_sensor_id[32];
+extern uint8_t last_battery;
+
 typedef struct {
   char name[MAX_ITEM_TEXT_LENGTH];
   char type[MAX_ITEM_TYPE_LENGTH];
@@ -34,6 +37,7 @@ extern int current_item;
 
 /* queue for items being logged */
 typedef struct {
+  uint8_t battery;
   char date[MAX_ITEM_DATE_LENGTH];
   char type[MAX_ITEM_TYPE_LENGTH];
   char json[MAX_ITEM_JSON_LENGTH];
@@ -51,6 +55,10 @@ void load_keytoken();
 void load_sensorid();
 /* Load all log items from persistent storage */
 void load_log();
+/* Store the last logged battery status */
+void store_last_battery();
+/* Load the last logged battery status */
+void load_last_battery();
 
 void activity_append(char *name, char* type, char* json);
 void activity_set(int index, char *name, char* type, char* json);

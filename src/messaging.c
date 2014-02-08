@@ -5,7 +5,7 @@
 #include "connect.h"
 
 #define MAX_MESSAGES 4
-#define MAX_VALUES 4
+#define MAX_VALUES 5
 #define MAX_MESSAGE_SIZE 512
 
 const uint32_t inbound_size = 256;
@@ -87,6 +87,8 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
     if (strcmp(type_tuple->value->cstring, message_type_item) == 0) {
 		Tuple *count_tuple = dict_find(iter, MESSAGE_ITEM_COUNT);
 		s_active_item_count = count_tuple->value->uint16;
+		if (s_active_item_count > MAX_ACTIVITY_ITEMS)
+			s_active_item_count = MAX_ACTIVITY_ITEMS;
 		if (s_active_item_count > 0) {
 			Tuple *item_tuple = dict_find(iter, MESSAGE_ITEM);
 			Tuple *name_tuple = dict_find(iter, MESSAGE_ITEM_NAME);
@@ -174,6 +176,12 @@ static void message_add_cstring(Message *message, int key, const char* data) {
 	memcpy(&message->data[message->data_count], &token, sizeof(Tuplet));
 	message->data_count++;
 }
+/* add int data to the message */
+static void message_add_int(Message *message, int key, const int data) {
+	Tuplet token = ((const Tuplet) { .type = TUPLE_INT, .key = key, .integer = { .storage = data, .width = sizeof(data) }});
+	memcpy(&message->data[message->data_count], &token, sizeof(Tuplet));
+	message->data_count++;
+}
 
 void queue_item(int current_item) {
 	// append the item to the list of sending items
@@ -201,6 +209,8 @@ void send_next_item() {
 	message_add_cstring(message, MESSAGE_DATE, item->date);
 	message_add_cstring(message, MESSAGE_DATATYPE, item->type);
 	message_add_cstring(message, MESSAGE_JSON, item->json);
+	if (item->battery <= 100)
+		message_add_int(message, MESSAGE_BATTERY, item->battery);
 	send_current_message();
 }
 

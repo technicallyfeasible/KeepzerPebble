@@ -20,7 +20,7 @@ static char* text_start_title = "Connect\nto\nKeepzer";
 static char* text_start_subtitle = "(You must connect to make full use of the product)";
 static char* text_start_options = "Options";
 
-GFont symbolFont, titleFont, subtitleFont, eventsFont, statusFont, smallFont, tinyFont;
+GFont symbolFont, titleFont, subtitleFont, eventsFont, statusFont, smallFont, tinyFont, codeFont;
 
 /* General window stuff */
 static Window *window;
@@ -362,6 +362,7 @@ static void init(Window *window) {
 	init_messaging();
 	load_keytoken();
 	load_sensorid();
+	load_last_battery();
 	load_config();
 	load_log();
 
@@ -426,6 +427,7 @@ int main(void) {
 	statusFont = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 	smallFont = fonts_get_system_font(FONT_KEY_GOTHIC_28 /*FONT_KEY_ROBOTO_CONDENSED_21*/);
 	tinyFont = fonts_get_system_font(FONT_KEY_GOTHIC_18);
+	codeFont = fonts_get_system_font(FONT_KEY_GOTHIC_28);
 	
 	/* create main window */
 	window = window_create();

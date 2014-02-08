@@ -1,6 +1,7 @@
-var configUri = "http://test.keepzer.com/other/pebble";
-var sensorUri = "http://test.keepzer.com/sensors/v1";
+var configUri = "http://test2.keepzer.com/other/pebble";
+var sensorUri = "http://test2.keepzer.com/sensors/v1";
 var appId = "a1b962c3-ce24-45be-9ee4-093692cbef79";
+var batteryType = "keepzer.device.battery";
 
 var initialised = false;
 var connecting = false;
@@ -172,7 +173,7 @@ function getSensorIdKeepzer(done) {
 	log("Getting sensor id");
 
 	var req = new XMLHttpRequest();
-	req.open('GET', sensorUri + '/discover/uniqueid?appId=' + appId + '&length=6', true);
+	req.open('GET', sensorUri + '/discover/uniqueid?appId=' + appId + '&length=6&exclude=lI0O', true);
 	req.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
 	req.onload = function(e) {
 		if (req.readyState != 4) return;
@@ -272,10 +273,35 @@ Pebble.addEventListener("appmessage", function(e) {
 			var itemDate = e.payload.date;
 			var itemType = e.payload.dataType;
 			var itemJson = e.payload.json;
-			storeItemKeepzer(itemDate, itemType, itemJson, function(result) {
-				log("Logged item: " + result);
-				sendLogResult(result);
-			});
+			log("Logging date: " + itemDate);
+			// battery status unchanged so just send the item
+			if (typeof e.payload.battery === "undefined") {
+				storeItemKeepzer(itemDate, itemType, itemJson, function(result) {
+					log("Logged item: " + result);
+					sendLogResult(result);
+				});
+			} else {
+				// battery status has changed so we first send battery and then the item
+				log("battery: " + e.payload.battery);
+				if (typeof e.payload.battery !== "undefined") {
+					var batteryData = { "device": "Pebble", "battery": e.payload.battery + "%" };
+					storeItemKeepzer(itemDate, batteryType, JSON.stringify(batteryData), function(result) {
+						// if battery sending failed then don't even try the item, just send back failure
+						log("Logged battery: " + result);
+						if (result != 1 && result != 3) {
+							log("Error logging battery, skipping item.");
+							sendLogResult(result);
+						} else {
+							// try the item like normally
+							log("Battery sent successfully, sending item.");
+							storeItemKeepzer(itemDate, itemType, itemJson, function(result) {
+								log("Logged item: " + result);
+								sendLogResult(result);
+							});
+						}
+					});
+				}
+			}
 			break;
 	}
   }

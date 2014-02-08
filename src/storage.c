@@ -5,6 +5,7 @@
 
 char s_key_token[164] = "\0";
 char s_sensor_id[32];
+uint8_t last_battery;
 ActivityItem s_activity_items[MAX_ACTIVITY_ITEMS];
 int s_active_item_count = 0;
 int current_item = 0;
@@ -18,6 +19,8 @@ void store_config(bool currentOnly, int index) {
 	persist_write_int(STORAGE_ITEM_CURRENT, current_item);
 	if (currentOnly) return;
 	persist_write_int(STORAGE_ITEM_COUNT, s_active_item_count);
+	if (index >= MAX_ACTIVITY_ITEMS)
+		return;
 	// each item has to be written separately because maximum value size is 256 bytes
 	if(index >= 0 && index < s_active_item_count)
 		persist_write_data(STORAGE_ITEMS + index, &s_activity_items[index], sizeof(ActivityItem));
@@ -62,8 +65,22 @@ void store_sensorid() {
 void load_sensorid() {
 	persist_read_string(STORAGE_SENSORID, s_sensor_id, sizeof(s_sensor_id));
 }
+/* Store the last logged battery status */
+void store_last_battery() {
+	if (last_battery > 100)
+		return;
+	persist_write_int(STORAGE_BATTERY, last_battery);
+}
+/* Load the last logged battery status */
+void load_last_battery() {
+	if (!persist_exists(STORAGE_BATTERY))
+		last_battery = 255;
+	last_battery = persist_read_int(STORAGE_BATTERY);
+}
 /* Store all log items in persistent storage */
 void store_log() {
+    if (s_log_item_count > MAX_LOG_ITEMS)
+	  s_log_item_count = MAX_LOG_ITEMS;
 	persist_write_int(STORAGE_LOG_COUNT, s_log_item_count);
 	// each item has to be written separately because maximum value size is 256 bytes
 	for(int i = 0; i < s_log_item_count; i++) {
@@ -83,18 +100,16 @@ void load_log() {
 }
 
 void activity_append(char *name, char* type, char* json) {
-	if (s_active_item_count >= MAX_ACTIVITY_ITEMS) { 
+	if (s_active_item_count >= MAX_ACTIVITY_ITEMS)
 		return;
-	}
 	strcpy(s_activity_items[s_active_item_count].name, name);
 	strcpy(s_activity_items[s_active_item_count].type, type);
 	strcpy(s_activity_items[s_active_item_count].json, json);
 	s_active_item_count++;
 }
 void activity_set(int index, char *name, char* type, char* json) {
-	if (index >= s_active_item_count || index >= MAX_ACTIVITY_ITEMS) { 
+	if (index >= s_active_item_count || index >= MAX_ACTIVITY_ITEMS)
 		return;
-	}
 	strcpy(s_activity_items[index].name, name);
 	strcpy(s_activity_items[index].type, type);
 	strcpy(s_activity_items[index].json, json);
@@ -117,6 +132,15 @@ void logitem_append(int index, char* dateString) {
 		LOG("Cannot append");
 		return;
 	}
+	// store current battery
+	BatteryChargeState batteryState = battery_state_service_peek();
+	if (batteryState.charge_percent != last_battery) {
+		s_log_items[s_log_item_count].battery = batteryState.charge_percent;
+		last_battery = batteryState.charge_percent;
+		store_last_battery();
+	} else
+		s_log_items[s_log_item_count].battery = 255;
+	// store item
 	strcpy(s_log_items[s_log_item_count].date, dateString);
 	safestrcpy(s_log_items[s_log_item_count].type, s_activity_items[index].type);
 	safestrcpy(s_log_items[s_log_item_count].json, s_activity_items[index].json);
