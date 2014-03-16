@@ -16,13 +16,13 @@ var isSending = false;
 
 	 
 function log(text) {
-	//console.log(text);
+	console.log(text);
 }
 function setItem(key, val) {
-	window.localStorage.setItem('keepzer_' + key, val);
+	localStorage.setItem('keepzer_' + key, val);
 }
 function getItem(key) {
-	return window.localStorage.getItem('keepzer_' + key);
+	return localStorage.getItem('keepzer_' + key);
 }
 
 function appMessageAck(e) {
@@ -34,7 +34,7 @@ function appMessageNack(e) {
     log("Error sending message: " + e.error.message);
 }
 function sendMessages() {
-	if(isSending || messages.length == 0) return;
+	if(isSending || messages.length === 0) return;
 	isSending = true;
 	var message = messages[0];
 	messages.splice(0, 1);
@@ -60,8 +60,8 @@ function sendItems() {
 	if(!options || !options.items)
 		return;
 	// send fake item if all were deleted
-	if (options.items.length == 0) {
-		sendItem(i, {"name":"", "dataType":"", "json":""}, 0);
+	if (options.items.length === 0) {
+		sendItem(0, {"name":"", "dataType":"", "json":""}, 0);
 		return;
 	}
 	for(var i = 0; i < options.items.length; i++)
@@ -107,7 +107,7 @@ function connectKeepzer(sensorId) {
 		if (req.status == 200) {
 			var response = JSON.parse(req.responseText);
 			if (!response.isError && response.key) {
-				keyValue = response.key;
+				var keyValue = response.key;
 				log("Connected. Key: " + keyValue);
 				keytoken = keyValue;
 				setItem('keytoken', keytoken);
@@ -233,11 +233,11 @@ Pebble.addEventListener("webviewclosed", function(e) {
 		log("Storing options: " + stringOptions);
 		setItem('keepzer_options', stringOptions);
 		// get keytoken and send to watch if it exists
-	    keytoken = getItem('keytoken');
+		keytoken = getItem('keytoken');
 		if (keytoken)
 			sendKeyToken(keytoken);
 		// get sensor id and send to watch if it exists
-	    sensorId = getItem('sensorid');
+		sensorId = getItem('sensorid');
 		if (sensorId)
 			sendSensorId(sensorId);
 		sendItems();
