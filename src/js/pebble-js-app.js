@@ -1,5 +1,5 @@
-var configUri = "http://test2.keepzer.com/other/pebble";
-var sensorUri = "http://test2.keepzer.com/sensors/v1";
+var configUri = "https://www.keepzer.com/other/pebble";
+var sensorUri = "https://www.keepzer.com/sensors/v1";
 var appId = "a1b962c3-ce24-45be-9ee4-093692cbef79";
 var batteryType = "keepzer.device.battery";
 
@@ -17,6 +17,12 @@ var isSending = false;
 	 
 function log(text) {
 	//console.log(text);
+}
+function setItem(key, val) {
+	window.localStorage.setItem('keepzer_' + key, val);
+}
+function getItem(key) {
+	return window.localStorage.getItem('keepzer_' + key);
 }
 
 function appMessageAck(e) {
@@ -104,7 +110,7 @@ function connectKeepzer(sensorId) {
 				keyValue = response.key;
 				log("Connected. Key: " + keyValue);
 				keytoken = keyValue;
-				window.localStorage.setItem('keytoken', keytoken);
+				setItem('keytoken', keytoken);
 				sendKeyToken(keytoken);
 			} else {
 				if (!connecting)
@@ -182,7 +188,7 @@ function getSensorIdKeepzer(done) {
 			var response = JSON.parse(req.responseText);
 			if (!response.isError && response.sensorId) {
 				sensorId = response.sensorId;
-				window.localStorage.setItem('sensorid', keytoken);
+				setItem('sensorid', keytoken);
 			}
 		} else {
 			log("UniqueId error: " + req.status);
@@ -196,7 +202,9 @@ function getSensorIdKeepzer(done) {
 
 Pebble.addEventListener("ready", function() {
     initialised = true;
-    options = JSON.parse(window.localStorage.getItem('options'));
+	var stringOptions = getItem('options');
+	options = JSON.parse(stringOptions ? stringOptions : '{}');
+	log('Loaded options: ' + stringOptions);
 });
 
 Pebble.addEventListener("showConfiguration", function() {
@@ -208,7 +216,7 @@ Pebble.addEventListener("showConfiguration", function() {
 
 Pebble.addEventListener("webviewclosed", function(e) {
     log("configuration closed");
-    if (e.response != '') {
+    if (e.response) {
 		log("Options received: " + e.response);
 		var stringOptions = decodeURIComponent(e.response).replace(/[+]/g, ' ');
 		options = JSON.parse(stringOptions);
@@ -223,13 +231,13 @@ Pebble.addEventListener("webviewclosed", function(e) {
 		stringOptions = JSON.stringify(options);
 		// store options
 		log("Storing options: " + stringOptions);
-		window.localStorage.setItem('options', stringOptions);
+		setItem('keepzer_options', stringOptions);
 		// get keytoken and send to watch if it exists
-	    keytoken = window.localStorage.getItem('keytoken');
+	    keytoken = getItem('keytoken');
 		if (keytoken)
 			sendKeyToken(keytoken);
 		// get sensor id and send to watch if it exists
-	    sensorId = window.localStorage.getItem('sensorid');
+	    sensorId = getItem('sensorid');
 		if (sensorId)
 			sendSensorId(sensorId);
 		sendItems();
@@ -244,17 +252,14 @@ Pebble.addEventListener("appmessage", function(e) {
 		case "keytoken":
 			// the watch sends the current keytoken for item logging
 			log("Received token: " + e.payload.keyToken);
-			log("Received sensorId: " + e.payload.sensorId);
 			keytoken = e.payload.keyToken;
-			window.localStorage.setItem('keytoken', keytoken);
-			//sensorId = e.payload.sensorId;
-			//window.localStorage.setItem('sensorid', sensorId);
+			setItem('keytoken', keytoken);
 			break;
 		case "sensorid":
 			// the watch sends the current sensorid for item logging
 			log("Received sensorId: " + e.payload.sensorId);
 			sensorId = e.payload.sensorId;
-			window.localStorage.setItem('sensorid', sensorId);
+			setItem('sensorid', sensorId);
 			break;
 		case "connect":
 			if(!sensorId) {

@@ -14,7 +14,7 @@
         "itemName": 11,
         "battery": 33
     },
-    "longName": "Keepzer for Pebble",
+    "longName": "Keepzer life-logging",
     "versionCode": 1,
     "capabilities": [
         "configurable"
@@ -26,6 +26,12 @@
     },
     "resources": {
         "media": [
+            {
+                "menuIcon": true,
+                "type": "png",
+                "name": "IMAGE_LOGO",
+                "file": "images/keepzer_pebble.png"
+            },
             {
                 "type": "png",
                 "name": "ICON_INFO",
@@ -42,12 +48,6 @@
                 "type": "font",
                 "name": "FONT_UNICONS_30",
                 "file": "fonts/unicons_30.ttf"
-            },
-            {
-                "menuIcon": true,
-                "type": "png",
-                "name": "IMAGE_LOGO",
-                "file": "images/keepzer_pebble.png"
             },
             {
                 "type": "png",

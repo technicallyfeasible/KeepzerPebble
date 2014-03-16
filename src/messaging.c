@@ -209,7 +209,7 @@ void send_next_item() {
 	message_add_cstring(message, MESSAGE_DATE, item->date);
 	message_add_cstring(message, MESSAGE_DATATYPE, item->type);
 	message_add_cstring(message, MESSAGE_JSON, item->json);
-	if (item->battery <= 100)
+	if (item->battery <= 200)
 		message_add_int(message, MESSAGE_BATTERY, item->battery);
 	send_current_message();
 }

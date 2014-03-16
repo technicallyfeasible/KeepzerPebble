@@ -134,9 +134,12 @@ void logitem_append(int index, char* dateString) {
 	}
 	// store current battery
 	BatteryChargeState batteryState = battery_state_service_peek();
-	if (batteryState.charge_percent != last_battery) {
-		s_log_items[s_log_item_count].battery = batteryState.charge_percent;
-		last_battery = batteryState.charge_percent;
+	uint8_t batteryPercent = batteryState.charge_percent;
+	if (batteryPercent >= 90 && !batteryState.is_charging && batteryState.is_plugged)
+		batteryPercent = 100;
+	if (batteryPercent != last_battery) {
+		s_log_items[s_log_item_count].battery = batteryPercent;
+		last_battery = batteryPercent;
 		store_last_battery();
 	} else
 		s_log_items[s_log_item_count].battery = 255;

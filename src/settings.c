@@ -7,15 +7,15 @@
 static Window *settings_window = NULL;
 static SimpleMenuLayer *menu_layer = NULL;
 
-#define MENU_HELP 0
-#define MENU_DISCONNECT 1
+//#define MENU_HELP 0
+#define MENU_DISCONNECT 0
 static SimpleMenuItem menu_items_root[2];
 static SimpleMenuSection sections_root[1];
 
 static void menu_select_callback(int index, void *ctx) {
 	switch(index) {
-		case MENU_HELP:
-			break;
+		//case MENU_HELP:
+		//	break;
 		case MENU_DISCONNECT:
 			set_keytoken("\0");
 			sendKeyToken();
@@ -27,11 +27,11 @@ static void menu_select_callback(int index, void *ctx) {
 
 
 static void create_menu(Window *window) {
-	menu_items_root[MENU_HELP] = (SimpleMenuItem) {
+	/*menu_items_root[MENU_HELP] = (SimpleMenuItem) {
 		.title = "Help",
 		.callback = menu_select_callback,
 		.icon = icon_info
-	};
+	};*/
 	menu_items_root[MENU_DISCONNECT] = (SimpleMenuItem) {
 		.title = "Disconnect",
 		.callback = menu_select_callback,
@@ -39,7 +39,7 @@ static void create_menu(Window *window) {
 	};
 	sections_root[0] = (SimpleMenuSection) {
 		//.title = "Options",
-		.num_items = 2,
+		.num_items = 1,
 		.items = menu_items_root,
 	};
 	
