@@ -14,7 +14,7 @@
         "itemName": 11,
         "battery": 33
     },
-    "longName": "Keepzer life-logging",
+    "longName": "Keepzer",
     "versionCode": 1,
     "capabilities": [
         "configurable"

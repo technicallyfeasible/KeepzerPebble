@@ -380,9 +380,10 @@ static void init(Window *window) {
 	send_next_item();
 
 	if (s_active_item_count == 0) {
-		activity_append("coffee", "keepzer.health.body.drink", "{\"drink\":\"coffee\",\"amount\":\"150ml\"}");
-		activity_append("muffin", "keepzer.health.body.food", "{\"food\":\"muffin\",\"amount\":\"57g\"}");
-		activity_append("brush teeth", "keepzer.calendar.event", "{\"event\":\"brush teeth\"}");
+		activity_append("Drank a coffee", "keepzer.health.body.drink", "{\"drink\":\"Drank a coffee\",\"amount\":\"150ml\"}");
+		activity_append("Ate junk food", "keepzer.health.body.food", "{\"food\":\"Ate junk food\",\"amount\":\"\"}");
+		activity_append("Exercised", "keepzer.calendar.event", "{\"event\":\"Exercised\"}");
+		store_config(false, -1);
 	}
 		
 	create_events(window);
