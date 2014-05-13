@@ -59,6 +59,10 @@ void load_log();
 void store_last_battery();
 /* Load the last logged battery status */
 void load_last_battery();
+/* Store the timezone offset */
+void store_timezone_offset();
+/* Load the timezone offset */
+void load_timezone_offset();
 
 void activity_append(char *name, char* type, char* json);
 void activity_set(int index, char *name, char* type, char* json);

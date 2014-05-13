@@ -51,7 +51,6 @@ static void send_current_message() {
 	
 	Message* message = &message_queue[0];
 	
-	uint32_t destSize = MAX_MESSAGE_SIZE;
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
 	for (int i = 0; i < message->data_count; i++)

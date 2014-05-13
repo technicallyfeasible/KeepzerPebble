@@ -17,7 +17,6 @@ static char* navigation_text_log = "5";
 static char* navigation_text_start = "3";
 static char* navigation_text_options = "";
 static char* text_start_title = "Connect\nto\nKeepzer";
-static char* text_start_subtitle = "(You must connect to make full use of the product)";
 static char* text_start_options = "Options";
 
 GFont symbolFont, titleFont, subtitleFont, eventsFont, statusFont, smallFont, tinyFont, codeFont;
@@ -46,7 +45,6 @@ static PropertyAnimation *state_layer_animation;
 GBitmap *arrow_up_image, *arrow_down_image, *logo_image, *icon_info, *icon_disconnect;
 
 static int state = 0, lastState = -1;			// 0: disconnected, 1: connecting, 2: connected
-static int screen_count = 1;
 
 static char notification_buffer[128] = "\0";
 
@@ -68,12 +66,13 @@ static void select_current_item() {
 }
 
 void destroy_property_animation(PropertyAnimation **animation) {
-	if (*animation == NULL) {
+	if (*animation == NULL)
 		return;
-	}
-	if (animation_is_scheduled((Animation*) *animation)) {
+	if (animation_is_scheduled((Animation*) *animation))
 		animation_unschedule((Animation*) *animation);
-	}
+	// can happen if there is a stop handler which destroys the animation
+	if (*animation == NULL)
+		return;
 	property_animation_destroy(*animation);
 	*animation = NULL;
 }

@@ -34,5 +34,7 @@ void connect();
 void sendKeyToken();
 /* send sensor id to configuration side so it's available for logging */
 void sendSensorId();
+/* get timezone offset */
+void getTimezoneOffset();
 
 #endif

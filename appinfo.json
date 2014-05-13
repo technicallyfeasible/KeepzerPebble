@@ -1,7 +1,8 @@
 {
-    "versionLabel": "1.0",
+    "versionLabel": "1.1.1",
     "uuid": "1670af4f-193f-4921-be48-11376e71adc2",
     "appKeys": {
+        "battery": 33,
         "dataType": 31,
         "type": 0,
         "item": 10,
@@ -12,7 +13,7 @@
         "sensorId": 20,
         "itemCount": 12,
         "itemName": 11,
-        "battery": 33
+        "timezoneOffset": 2
     },
     "longName": "Keepzer",
     "versionCode": 1,
@@ -34,13 +35,13 @@
             },
             {
                 "type": "png",
-                "name": "ICON_INFO",
-                "file": "images/icon_info.png"
+                "name": "IMAGE_ARROW_UP",
+                "file": "images/arrow_up.png"
             },
             {
                 "type": "png",
-                "name": "ICON_DISCONNECT",
-                "file": "images/icon_disconnect.png"
+                "name": "IMAGE_ARROW_DOWN",
+                "file": "images/arrow_down.png"
             },
             {
                 "trackingAdjust": -10,
@@ -51,13 +52,13 @@
             },
             {
                 "type": "png",
-                "name": "IMAGE_ARROW_DOWN",
-                "file": "images/arrow_down.png"
+                "name": "ICON_DISCONNECT",
+                "file": "images/icon_disconnect.png"
             },
             {
                 "type": "png",
-                "name": "IMAGE_ARROW_UP",
-                "file": "images/arrow_up.png"
+                "name": "ICON_INFO",
+                "file": "images/icon_info.png"
             }
         ]
     }

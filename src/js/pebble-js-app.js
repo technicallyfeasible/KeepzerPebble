@@ -16,7 +16,7 @@ var isSending = false;
 
 	 
 function log(text) {
-	console.log(text);
+	//console.log(text);
 }
 function setItem(key, val) {
 	localStorage.setItem('keepzer_' + key, val);

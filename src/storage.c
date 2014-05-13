@@ -77,6 +77,7 @@ void load_last_battery() {
 		last_battery = 255;
 	last_battery = persist_read_int(STORAGE_BATTERY);
 }
+
 /* Store all log items in persistent storage */
 void store_log() {
     if (s_log_item_count > MAX_LOG_ITEMS)

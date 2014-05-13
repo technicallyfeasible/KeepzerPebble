@@ -163,7 +163,10 @@ static Layer *get_layer(int step) {
 
 static void set_step(int nextStep) {
 	if (nextStep == step || nextStep < 0 || nextStep > 5) return;
-	
+
+	destroy_property_animation(&out_animation);
+	destroy_property_animation(&in_animation);
+
 	Layer *current_layer = get_layer(step);
 	Layer *next_layer = get_layer(nextStep);
 
@@ -172,7 +175,7 @@ static void set_step(int nextStep) {
 		GRect to_rect = GRect(-bounds.size.w, 0, bounds.size.w, bounds.size.h);
 		out_animation = property_animation_create_layer_frame(current_layer, &from_rect, &to_rect);
 		animation_set_duration((Animation*) out_animation, 400);
-		animation_set_handlers((Animation*) out_animation, (AnimationHandlers) { .stopped = (AnimationStoppedHandler) animation_done }, NULL);
+		//animation_set_handlers((Animation*) out_animation, (AnimationHandlers) { .stopped = (AnimationStoppedHandler) animation_done }, NULL);
 		animation_schedule((Animation*) out_animation);
 	}
 	if (next_layer != NULL) {
@@ -180,7 +183,7 @@ static void set_step(int nextStep) {
 		GRect to_rect = GRect(0, 0, bounds.size.w, bounds.size.h);
 		in_animation = property_animation_create_layer_frame(next_layer, &from_rect, &to_rect);
 		animation_set_duration((Animation*) in_animation, 400);
-		animation_set_handlers((Animation*) in_animation, (AnimationHandlers) { .stopped = (AnimationStoppedHandler) animation_done }, NULL);
+		//animation_set_handlers((Animation*) in_animation, (AnimationHandlers) { .stopped = (AnimationStoppedHandler) animation_done }, NULL);
 		animation_schedule((Animation*) in_animation);
 	}
 	text_layer_set_text(navi_text_layer, (nextStep >= 5 ? text_finish : nextStep == 4 ? "" : text_next));
