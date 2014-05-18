@@ -208,7 +208,8 @@ Pebble.addEventListener("ready", function() {
 });
 
 Pebble.addEventListener("showConfiguration", function() {
-	var stringOptions = JSON.stringify(options);
+	var stringOptions = getItem('options');
+	//var stringOptions = JSON.stringify(options);
     log("Showing config with options: " + stringOptions);
 	var uri = configUri + '#' + encodeURIComponent(stringOptions);
     Pebble.openURL(uri);
@@ -231,7 +232,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
 		stringOptions = JSON.stringify(options);
 		// store options
 		log("Storing options: " + stringOptions);
-		setItem('keepzer_options', stringOptions);
+		setItem('options', stringOptions);
 		// get keytoken and send to watch if it exists
 		keytoken = getItem('keytoken');
 		if (keytoken)

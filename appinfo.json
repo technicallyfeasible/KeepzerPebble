@@ -1,65 +1,65 @@
 {
-    "versionLabel": "1.1.1",
+    "companyName": "Keepzer Ltd.",
+    "longName": "Keepzer",
+    "versionLabel": "1.1.2",
     "uuid": "1670af4f-193f-4921-be48-11376e71adc2",
     "appKeys": {
-        "battery": 33,
-        "dataType": 31,
-        "type": 0,
-        "item": 10,
-        "json": 32,
-        "keyToken": 21,
-        "result": 1,
         "date": 30,
         "sensorId": 20,
+        "timezoneOffset": 2,
+        "battery": 33,
+        "result": 1,
+        "item": 10,
+        "dataType": 31,
+        "keyToken": 21,
+        "json": 32,
         "itemCount": 12,
         "itemName": 11,
-        "timezoneOffset": 2
+        "type": 0
     },
-    "longName": "Keepzer",
-    "versionCode": 1,
-    "capabilities": [
-        "configurable"
-    ],
     "shortName": "Keepzer",
-    "companyName": "Keepzer Ltd.",
     "watchapp": {
         "watchface": false
     },
+    "capabilities": [
+        "configurable"
+    ],
     "resources": {
         "media": [
             {
-                "menuIcon": true,
-                "type": "png",
+                "file": "images/keepzer_pebble.png",
                 "name": "IMAGE_LOGO",
-                "file": "images/keepzer_pebble.png"
+                "type": "png",
+                "menuIcon": true
             },
             {
-                "type": "png",
+                "file": "images/arrow_up.png",
                 "name": "IMAGE_ARROW_UP",
-                "file": "images/arrow_up.png"
+                "type": "png"
             },
             {
-                "type": "png",
+                "file": "images/arrow_down.png",
                 "name": "IMAGE_ARROW_DOWN",
-                "file": "images/arrow_down.png"
+                "type": "png"
             },
             {
-                "trackingAdjust": -10,
                 "characterRegex": "[35tc]",
-                "type": "font",
+                "file": "fonts/unicons_30.ttf",
                 "name": "FONT_UNICONS_30",
-                "file": "fonts/unicons_30.ttf"
+                "type": "font",
+                "trackingAdjust": -10
             },
             {
-                "type": "png",
+                "file": "images/icon_disconnect.png",
                 "name": "ICON_DISCONNECT",
-                "file": "images/icon_disconnect.png"
+                "type": "png"
             },
             {
-                "type": "png",
+                "file": "images/icon_info.png",
                 "name": "ICON_INFO",
-                "file": "images/icon_info.png"
+                "type": "png"
             }
         ]
-    }
+    },
+    "versionCode": 1
 }
