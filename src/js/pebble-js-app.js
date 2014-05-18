@@ -137,6 +137,15 @@ function storeItemKeepzer(itemDate, itemType, itemJson, done) {
 		if(done) done(0);
 		return;
 	}
+	if (!itemJson)
+	{
+		log("Cannot send empty json for item type " + itemType);
+		if(done) done(0);
+		return;
+	}
+	// special treatment for double encoded json (can come from Pebble, may be a bug with Pebble)
+	else if (itemJson.indexOf("{\\\"") == 0)
+		itemJson = itemJson.replace(/\\\"/g, "\"").replace(/\\\\/g, "\\");
 
 	var req = new XMLHttpRequest();
 	req.open('POST', sensorUri + '/data/store', true);
