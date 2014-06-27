@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<div id="result"></div>
+
+<script type="text/javascript">
+
+function hex2byte(c)
+{
+	var charCode = c - 48;
+	if (charCode > 15)
+		charCode -= 7;
+	if (charCode > 15)
+		charCode -= 32;
+	if (charCode < 0 || charCode > 15)
+		return 0;
+	return charCode;
+}
+
+function hex2base64 (data) {
+  var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+  var o1, o2, o3, h1, h2, i = 0, ac = 0, enc = "", tmp_arr = [];
+
+  if (!data) {
+    return data;
+  }
+
+  do { // pack three quartets into two hexets
+    o1 = hex2byte(i < data.length ? data.charCodeAt(i++) : 48);
+    o2 = hex2byte(i < data.length ? data.charCodeAt(i++) : 48);
+    o3 = hex2byte(i < data.length ? data.charCodeAt(i++) : 48);
+
+    h1 = (o1 << 2) | (o2 >> 2);
+    h2 = ((o2 & 0x03) << 4) | o3;
+
+    // use hexets to index into b64, and append result to encoded string
+    tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2);
+  } while (i < data.length);
+
+  enc = tmp_arr.join('');
+
+  var r = (data.length % 3);
+
+  return (r == 1 ? enc.slice(0, -1) : enc) + '==='.slice(0, r);
+}
+
+var text = "{\"json\":\"{\\\"event\\\":\\\"some event\\\"}\"}";
+var obj = JSON.parse(text);
+
+	//document.getElementById('result').innerHTML = hex2base64('ffffffffff');
+	document.getElementById('result').innerHTML = hex2base64('8d2ddca8d3f7b389ce49af2676fc4');
+</script>
+
+</body>
+</html>
