@@ -91,6 +91,16 @@ function sendLogResult(result) {
 	addMessage(message);
 }
 
+function sendTimezone() {
+	var tz = -(new Date().getTimezoneOffset());
+	log('tz: ' + tz);
+	var message = {
+		"type": "tz",
+		"timezoneOffset": tz
+	};
+	addMessage(message);
+}
+
 function connectKeepzer(sensorId) {
 	if (connecting || !sensorId)
 		return;
@@ -144,7 +154,7 @@ function storeItemKeepzer(itemDate, itemType, itemJson, done) {
 		return;
 	}
 	// special treatment for double encoded json (can come from Pebble, may be a bug with Pebble)
-	else if (itemJson.indexOf("{\\\"") == 0)
+	else if (itemJson.indexOf("{\\\"") === 0)
 		itemJson = itemJson.replace(/\\\"/g, "\"").replace(/\\\\/g, "\\");
 
 	var req = new XMLHttpRequest();
@@ -214,6 +224,7 @@ Pebble.addEventListener("ready", function() {
 	var stringOptions = getItem('options');
 	options = JSON.parse(stringOptions ? stringOptions : '{}');
 	log('Loaded options: ' + stringOptions);
+	sendTimezone();
 });
 
 Pebble.addEventListener("showConfiguration", function() {

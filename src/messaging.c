@@ -16,6 +16,7 @@ static const char *message_type_log_result = "log_result";
 static const char *message_type_item = "item";
 static const char *message_type_sensorid = "sensorid";
 static const char *message_type_keytoken = "keytoken";
+static const char *message_type_timezone = "tz";
 static const char *message_type_connect = "connect";
 static const char *message_type_cancel_connect = "cancel_connect";
 
@@ -114,6 +115,14 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 		// we got a keytoken so we can send out pending events
 		send_next_item();
 	}
+    else if (strcmp(type_tuple->value->cstring, message_type_timezone) == 0) {
+		Tuple *token_tuple = dict_find(iter, MESSAGE_TIMEZONE);
+		timezone = token_tuple->value->int32;
+		store_timezone();
+		//char tz[32];
+		//snprintf(tz, 32, "%d", timezone);
+		//LOG(tz);
+	}
     else if (strcmp(type_tuple->value->cstring, message_type_log_result) == 0) {
 		Tuple *token_tuple = dict_find(iter, MESSAGE_RESULT);
 		int result = token_tuple->value->uint8;
@@ -187,8 +196,15 @@ void queue_item(int current_item) {
 	time_t date;
 	time(&date);
 	struct tm *localDate = localtime(&date);
+	char utcDate[MAX_ITEM_DATE_LENGTH];
+	strftime(utcDate, MAX_ITEM_DATE_LENGTH, "%FT%T", localDate);
 	char formattedDate[MAX_ITEM_DATE_LENGTH];
-	strftime(formattedDate, MAX_ITEM_DATE_LENGTH, "%FT%TZ", localDate);
+	char sign = '+';
+	if (timezone < 0){
+		sign = '-';
+		timezone = -timezone;
+	}
+	snprintf(formattedDate, MAX_ITEM_DATE_LENGTH, "%s%c%02d:%02d", utcDate, sign, timezone/60, timezone%60);
 	LOG(formattedDate);
 	logitem_append(current_item, formattedDate);
 	

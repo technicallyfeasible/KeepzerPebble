@@ -8,7 +8,7 @@
 
 #define MAX_ACTIVITY_ITEMS (12)
 #define MAX_ITEM_TEXT_LENGTH (32)
-#define MAX_ITEM_DATE_LENGTH (24)
+#define MAX_ITEM_DATE_LENGTH (32)
 #define MAX_ITEM_TYPE_LENGTH (64)
 #define MAX_ITEM_JSON_LENGTH (128)
 #define MAX_LOG_ITEMS (8)
@@ -19,12 +19,14 @@
 #define STORAGE_KEYTOKEN 3
 #define STORAGE_SENSORID 4
 #define STORAGE_BATTERY 5
+#define STORAGE_TIMEZONE 6
 #define STORAGE_ITEMS 20
 #define STORAGE_LOGS 100
 
 extern char s_key_token[164];
 extern char s_sensor_id[32];
 extern uint8_t last_battery;
+extern int timezone;
 
 typedef struct {
   char name[MAX_ITEM_TEXT_LENGTH];
@@ -59,10 +61,10 @@ void load_log();
 void store_last_battery();
 /* Load the last logged battery status */
 void load_last_battery();
-/* Store the timezone offset */
-void store_timezone_offset();
-/* Load the timezone offset */
-void load_timezone_offset();
+/* Store the last logged timezone */
+void store_timezone();
+/* Load the last logged timezone */
+void load_timezone();
 
 void activity_append(char *name, char* type, char* json);
 void activity_set(int index, char *name, char* type, char* json);

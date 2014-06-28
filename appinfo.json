@@ -1,65 +1,65 @@
 {
-    "companyName": "Keepzer Ltd.",
-    "longName": "Keepzer",
-    "versionLabel": "1.1.3",
     "uuid": "1670af4f-193f-4921-be48-11376e71adc2",
-    "appKeys": {
-        "date": 30,
-        "sensorId": 20,
-        "timezoneOffset": 2,
-        "battery": 33,
-        "result": 1,
-        "item": 10,
-        "dataType": 31,
-        "keyToken": 21,
-        "json": 32,
-        "itemCount": 12,
-        "itemName": 11,
-        "type": 0
-    },
-    "shortName": "Keepzer",
-    "watchapp": {
-        "watchface": false
-    },
+    "longName": "Keepzer",
+    "versionLabel": "1.2.0",
+    "companyName": "Keepzer Ltd.",
     "capabilities": [
         "configurable"
     ],
     "resources": {
         "media": [
             {
-                "file": "images/keepzer_pebble.png",
-                "name": "IMAGE_LOGO",
                 "type": "png",
-                "menuIcon": true
+                "menuIcon": true,
+                "name": "IMAGE_LOGO",
+                "file": "images/keepzer_pebble.png"
             },
             {
-                "file": "images/arrow_up.png",
+                "type": "png",
                 "name": "IMAGE_ARROW_UP",
-                "type": "png"
+                "file": "images/arrow_up.png"
             },
             {
-                "file": "images/arrow_down.png",
+                "type": "png",
                 "name": "IMAGE_ARROW_DOWN",
-                "type": "png"
+                "file": "images/arrow_down.png"
             },
             {
-                "characterRegex": "[35tc]",
-                "file": "fonts/unicons_30.ttf",
-                "name": "FONT_UNICONS_30",
                 "type": "font",
-                "trackingAdjust": -10
+                "trackingAdjust": -10,
+                "name": "FONT_UNICONS_30",
+                "characterRegex": "[35tc]",
+                "file": "fonts/unicons_30.ttf"
             },
             {
-                "file": "images/icon_disconnect.png",
+                "type": "png",
                 "name": "ICON_DISCONNECT",
-                "type": "png"
+                "file": "images/icon_disconnect.png"
             },
             {
-                "file": "images/icon_info.png",
+                "type": "png",
                 "name": "ICON_INFO",
-                "type": "png"
+                "file": "images/icon_info.png"
             }
         ]
     },
-    "versionCode": 1
+    "shortName": "Keepzer",
+    "versionCode": 1,
+    "watchapp": {
+        "watchface": false
+    },
+    "appKeys": {
+        "dataType": 31,
+        "json": 32,
+        "result": 1,
+        "type": 0,
+        "timezoneOffset": 34,
+        "itemCount": 12,
+        "itemName": 11,
+        "sensorId": 20,
+        "item": 10,
+        "date": 30,
+        "keyToken": 21,
+        "battery": 33
+    }
 }

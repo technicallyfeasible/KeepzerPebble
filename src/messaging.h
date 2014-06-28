@@ -17,6 +17,7 @@
 #define MESSAGE_DATATYPE 31
 #define MESSAGE_JSON 32
 #define MESSAGE_BATTERY 33
+#define MESSAGE_TIMEZONE 34
 
 void init_messaging();
 void deinit_messaging();

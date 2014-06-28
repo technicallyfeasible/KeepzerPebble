@@ -6,6 +6,7 @@
 char s_key_token[164] = "\0";
 char s_sensor_id[32];
 uint8_t last_battery;
+int timezone;
 ActivityItem s_activity_items[MAX_ACTIVITY_ITEMS];
 int s_active_item_count = 0;
 int current_item = 0;
@@ -73,9 +74,23 @@ void store_last_battery() {
 }
 /* Load the last logged battery status */
 void load_last_battery() {
-	if (!persist_exists(STORAGE_BATTERY))
+	if (!persist_exists(STORAGE_BATTERY)) {
 		last_battery = 255;
+		return;
+	}
 	last_battery = persist_read_int(STORAGE_BATTERY);
+}
+/* Store the last logged timezone */
+void store_timezone() {
+	persist_write_int(STORAGE_TIMEZONE, timezone);
+}
+/* Load the last logged timezone */
+void load_timezone() {
+	if (!persist_exists(STORAGE_TIMEZONE)) {
+		timezone = 0;
+		return;
+	}
+	timezone = persist_read_int(STORAGE_TIMEZONE);
 }
 
 /* Store all log items in persistent storage */
