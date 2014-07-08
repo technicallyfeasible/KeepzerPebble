@@ -16,7 +16,7 @@ var isSending = false;
 
 	 
 function log(text) {
-	//console.log(text);
+	console.log(text);
 }
 function setItem(key, val) {
 	localStorage.setItem('keepzer_' + key, val);
@@ -150,7 +150,7 @@ function storeItemKeepzer(itemDate, itemType, itemJson, done) {
 	if (!itemJson)
 	{
 		log("Cannot send empty json for item type " + itemType);
-		if(done) done(0);
+		if(done) done(3);
 		return;
 	}
 	// special treatment for double encoded json (can come from Pebble, may be a bug with Pebble)
@@ -319,7 +319,7 @@ Pebble.addEventListener("appmessage", function(e) {
 							sendLogResult(result);
 						} else {
 							// try the item like normally
-							log("Battery sent successfully, sending item.");
+							log("Battery sent successfully, sending item: " + itemJson);
 							storeItemKeepzer(itemDate, itemType, itemJson, function(result) {
 								log("Logged item: " + result);
 								sendLogResult(result);

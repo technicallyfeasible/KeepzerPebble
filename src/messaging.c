@@ -131,7 +131,7 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 		logPending = false;
 		if (result == 3 || result == 1)
 			logitem_remove(0);
-		if (result == 1 || result == 2)	// success or general error, try again
+		if (result == 1 || result == 2 || result == 3)	// success or general error, try again
 			send_next_item();
 		if (result == 0) {				// unauthorized, clear token and force reauth
 			LOG("Connect error");
