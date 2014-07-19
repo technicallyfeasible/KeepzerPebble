@@ -143,9 +143,13 @@ function cancelConnect() {
 function storeItemKeepzer(itemDate, itemType, itemJson, done) {
 	log("Storing item");
 	if (!keytoken) {
-		log("No keytoken available, cannot send.");
-		if(done) done(0);
-		return;
+		keytoken = getItem('keytoken');
+		if(!keytoken) {
+			log("No keytoken available, cannot send.");
+			if(done) done(0);
+			return;
+		}
+		log("Send warning: Keytoken restored");
 	}
 	if (!itemJson)
 	{
@@ -224,6 +228,8 @@ Pebble.addEventListener("ready", function() {
 	var stringOptions = getItem('options');
 	options = JSON.parse(stringOptions ? stringOptions : '{}');
 	log('Loaded options: ' + stringOptions);
+	keytoken = getItem('keytoken');
+	log('Fetched keytoken: ' + keytoken);
 	sendTimezone();
 });
 

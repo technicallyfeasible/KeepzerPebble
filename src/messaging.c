@@ -248,6 +248,9 @@ void connect() {
 
 /* send keytoken to configuration side so it's available for logging */
 void sendKeyToken() {
+	// don't send keytoken if it is empty
+	if (strlen(s_key_token) == 0)
+		return;
 	Message *message = NULL;
 	queue_message(&message);
 	if (message == NULL) return;
