@@ -69,6 +69,7 @@ static void out_sent_handler(DictionaryIterator *sent, void *context) {
 static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
 	// outgoing message failed
 	messagePending = false;
+	logPending = false;
 	
 	LOG("send failed");
 	Tuple *type_tuple = dict_find(failed, MESSAGE_TYPE);
@@ -219,7 +220,10 @@ void send_next_item() {
 
 	Message *message = NULL;
 	queue_message(&message);
-	if (message == NULL) return;
+	if (message == NULL) {
+		logPending = false;
+		return;
+	}
 	message_add_cstring(message, MESSAGE_TYPE, message_type_log);
 	message_add_cstring(message, MESSAGE_DATE, item->date);
 	message_add_cstring(message, MESSAGE_DATATYPE, item->type);
